@@ -37,7 +37,10 @@ impl CliArgs {
         match args.operations {
             cli_utils::Operations::Mayastor(ref mut operations) => {
                 operations.cli_args.namespace = ns;
-                operations.cli_args.kubeconfig = path
+                operations.cli_args.kubeconfig = path.clone();
+                if let resources::Operations::Dump(ref mut dump_args) = operations.ops {
+                    dump_args.args.kubeconfig = path
+                }
             }
             cli_utils::Operations::LocalpvLvm(ref mut operations) => {
                 operations.cli_args.namespace = ns;
