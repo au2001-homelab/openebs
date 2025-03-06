@@ -11,7 +11,7 @@ While the original kubectl-openebs plugin only supported LocalPV engines, this p
 
 ## Namespace handling
 
-This plugin avoids the hardcoded "mayastor" namespace assumption used by the ```kubectl-mayastor``` plugin. Instead, if a namespace is not explicitly provided, the plugin defaults to the namespace defined in the default kubeconfig context.The kubeconfig path is configurable using `--kube-config-path` or the `KUBECONFIG` env. Namespace can be set explicitly using the `--namespace` option.
+This plugin avoids the hardcoded "mayastor" namespace assumption used by the ```kubectl-mayastor``` plugin. Instead, if a namespace is not explicitly provided, the plugin defaults to the namespace defined in the default kubeconfig context.The kubeconfig path is configurable using `--kubeconfig` or the `KUBECONFIG` env. Namespace can be set explicitly using the `--namespace` option.
 
 This allows users to manage OpenEBS installations in any namespace. For example, if OpenEBS is installed in the "storage" namespace, users can set their current context's namespace using:
 
@@ -52,9 +52,10 @@ Commands:
   help              Print this message or the help of the given subcommand(s)
 
 Options:
-  -n, --namespace <NAMESPACE>  Namespace where openebs is installed. If unset, defaults to the default namespace in the current context
-  -h, --help                   Print help
-  -V, --version                Print version
+  -n, --namespace <NAMESPACE>    Namespace where openebs is installed. If unset, defaults to the default namespace in the current context
+  -k, --kubeconfig <KUBECONFIG>  Path to kubeconfig file
+  -h, --help                     Print help
+  -V, --version                  Print version
   ```
 
 ## Global Options
@@ -75,7 +76,7 @@ Options:
           The Output, viz yaml, json [default: none]
   -n, --namespace <NAMESPACE>
           Namespace where openebs is installed. If unset, defaults to the default namespace in the current context
-  -k, --kube-config-path <KUBE_CONFIG_PATH>
+  -k, --kubeconfig <KUBE_CONFIG_PATH>
           Path to kubeconfig file
   -h, --help
           Print help                Print help
@@ -85,20 +86,13 @@ For Mayastor:
 
 ```
 Options:
-  -n, --namespace <NAMESPACE>
-          Namespace where openebs is installed. If unset, defaults to the default namespace in the current context
-  -r, --rest <REST>
-          The rest endpoint to connect to
-  -k, --kube-config-path <KUBE_CONFIG_PATH>
-          Path to kubeconfig file
-  -o, --output <OUTPUT>
-          The Output, viz yaml, json [default: none]
-  -j, --jaeger <JAEGER>
-          Trace rest requests to the Jaeger endpoint agent
-  -t, --timeout <TIMEOUT>
-          Timeout for the REST operations [default: 10s]
-  -h, --help
-          Print help
+  -n, --namespace <NAMESPACE>    Namespace where openebs is installed. If unset, defaults to the default namespace in the current context
+  -k, --kubeconfig <KUBECONFIG>  Path to kubeconfig file
+  -r, --rest <REST>              The rest endpoint to connect to
+  -o, --output <OUTPUT>          The Output, viz yaml, json [default: none]
+  -j, --jaeger <JAEGER>          Trace rest requests to the Jaeger endpoint agent
+  -t, --timeout <TIMEOUT>        Timeout for the REST operations [default: 10s]
+  -h, --help                     Print help
 ```
 
 ### Examples and Outputs
@@ -388,7 +382,7 @@ Options:
           The rest endpoint to connect to
   -t, --timeout <TIMEOUT>
           Specifies the timeout value to interact with other modules of system [default: 10s]
-  -k, --kube-config-path <KUBE_CONFIG_PATH>
+  -k, --kubeconfig <KUBECONFIG>
           Path to kubeconfig file
   -s, --since <SINCE>
           Period states to collect all logs from last specified duration [default: 24h]
@@ -441,8 +435,6 @@ kubectl openebs mayastor dump system -d <output_directory> -n <mayastor_namespac
           Display all the validations output but will not execute upgrade
   -r, --rest <REST>
           The rest endpoint to connect to
-  -k, --kube-config-path <KUBE_CONFIG_PATH>
-          Path to kubeconfig file
       --skip-data-plane-restart
           If set then upgrade will skip the io-engine pods restart
       --skip-single-replica-volume-validation
@@ -476,8 +468,6 @@ kubectl openebs mayastor dump system -d <output_directory> -n <mayastor_namespac
    Options:
    -r, --rest <REST>
         The rest endpoint to connect to
-   -k, --kube-config-path <KUBE_CONFIG_PATH>
-        Path to kubeconfig file
    -o, --output <OUTPUT>
         The Output, viz yaml, json [default: none]
    -j, --jaeger <JAEGER>
@@ -501,8 +491,6 @@ kubectl openebs mayastor dump system -d <output_directory> -n <mayastor_namespac
         If true, immediately remove upgrade resources bypass graceful deletion
   -r, --rest <REST>
         The rest endpoint to connect to
-  -k, --kube-config-path <KUBE_CONFIG_PATH>
-        Path to kubeconfig file
   -o, --output <OUTPUT>
         The Output, viz yaml, json [default: none]
   -j, --jaeger <JAEGER>
