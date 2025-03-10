@@ -12,7 +12,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          LATEST_VERSION=$(gh api repos/${{ github.repository_owner }}/mayastor-extensions/releases/latest | jq -r '.tag_name')
+          LATEST_VERSION=$(gh api repos/${{ github.repository_owner }}/openebs/releases/latest | jq -r '.tag_name')
           echo "Latest published version:$LATEST_VERSION"
           echo "ShouldUpdateKrew:"${{ !github.event.release.prerelease && (steps.latest-release.outputs.latestTag == github.event.release.tag_name) }}
           echo "latestTag=$LATEST_VERSION" >> "$GITHUB_OUTPUT"
