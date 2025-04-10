@@ -8,7 +8,6 @@ name = "upgrade-job"
 path = "src/bin/upgrade-job/main.rs"
 
 [lib]
-name = "openebs_upgrade"
 path = "src/lib.rs"
 
 [dependencies]

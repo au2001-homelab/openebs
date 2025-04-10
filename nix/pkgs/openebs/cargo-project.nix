@@ -57,6 +57,7 @@ let
     "Cargo.lock"
     "Cargo.toml"
     "plugin"
+    "upgrade"
     "mayastor/dependencies/control-plane/openapi/Cargo.toml"
     "mayastor/dependencies/control-plane/openapi/build.rs"
     "mayastor/dependencies/control-plane/openapi/src/lib.rs"
