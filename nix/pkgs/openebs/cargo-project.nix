@@ -119,8 +119,8 @@ let
       preBuild = ''
         # don't run during the dependency build phase
         if [ ! -f build.rs ]; then
-          patchShebangs .mayastor/dependencies/control-plane/scripts/rust/
-          .mayastor/dependencies/control-plane/scripts/rust/generate-openapi-bindings.sh --skip-git-diff
+          patchShebangs ./mayastor/dependencies/control-plane/scripts/rust/
+          ./mayastor/dependencies/control-plane/scripts/rust/generate-openapi-bindings.sh --skip-git-diff
         fi
       '';
       doCheck = false;
@@ -130,7 +130,7 @@ let
     rustPlatform.buildRustPackage (buildProps // {
       inherit buildType cargoBuildFlags;
       preBuild = ''
-        patchShebangs .mayastor/dependencies/control-plane/scripts/rust/
+        patchShebangs ./mayastor/dependencies/control-plane/scripts/rust/
       '' + pkgs.lib.optionalString (static) ''
         # the rust builder from nixpkgks does not parse target and just uses the host target...
         export NIX_CC_WRAPPER_TARGET_HOST_${builtins.replaceStrings [ "-" ] [ "_" ] hostTarget}=
