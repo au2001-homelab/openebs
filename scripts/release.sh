@@ -11,7 +11,7 @@ if [ ! -f "$SOURCE_REL" ] && [ -z "$CI" ]; then
   git submodule update --init --recursive
 fi
 
-IMAGES=""
+IMAGES="upgrade-job"
 BUILD_BINARIES="kubectl-openebs"
 PROJECT="openebs"
 . "$SOURCE_REL"

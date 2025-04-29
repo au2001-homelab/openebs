@@ -57,7 +57,7 @@ let
     "Cargo.lock"
     "Cargo.toml"
     "plugin"
-    "upgrade"
+    "openebs-upgrade"
     "mayastor/dependencies/control-plane/openapi/Cargo.toml"
     "mayastor/dependencies/control-plane/openapi/build.rs"
     "mayastor/dependencies/control-plane/openapi/src/lib.rs"
@@ -157,7 +157,7 @@ in
 
   build = { buildType, cargoBuildFlags ? [ ] }:
     if buildAllInOne then
-      builder { inherit buildType; cargoBuildFlags = [ "-p kubectl-openebs" ]; }
+      builder { inherit buildType; cargoBuildFlags = [ "-p kubectl-openebs" "-p openebs-upgrade" ]; }
     else
       builder { inherit buildType cargoBuildFlags; };
 }
