@@ -1,11 +1,11 @@
 ---
-oep-number: OEP 3905
+oep-number: OEP 3916
 title: Volume Cloning Feature for OpenEBS Mayastor
 authors:
-  - "@adamcharnock"
+  - "@adam-lithus"
 owners:
   - "@tiagolobocastro"
-  - "@adamcharnock"
+  - "@adam-lithus"
 editor: TBD
 creation-date: 2025-04-30
 last-updated: 2025-04-30
