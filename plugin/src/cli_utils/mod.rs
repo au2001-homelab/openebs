@@ -1,12 +1,16 @@
+use clap::Parser;
 use kubectl_plugin::resources;
 use localpv::hostpath;
 use localpv::lvm;
 use localpv::zfs;
+use plugin::{init_tracing_with_jaeger, ExecuteOperation};
+use upgrade::cli::UpgradeArgs;
+
 pub mod localpv;
 pub(crate) mod mayastor;
 
-use clap::Parser;
-use plugin::{init_tracing_with_jaeger, ExecuteOperation};
+pub mod get_able;
+pub mod upgrade;
 
 /// Storage engines supported.
 #[allow(clippy::large_enum_variant)]
@@ -16,6 +20,8 @@ pub enum Operations {
     LocalpvLvm(lvm::Lvm),
     LocalpvZfs(zfs::Zfs),
     LocalpvHostpath(hostpath::Hostpath),
+    Upgrade(UpgradeArgs),
+    Get(get_able::GetAble),
 }
 
 impl Operations {
@@ -34,6 +40,12 @@ impl Operations {
             }
             Operations::LocalpvHostpath(hostpath) => {
                 hostpath.ops.execute(&hostpath.cli_args).await?;
+            }
+            Operations::Upgrade(upgrade) => {
+                upgrade.apply().await?;
+            }
+            Operations::Get(get_able) => {
+                get_able.get().await?;
             }
         }
         Ok(())

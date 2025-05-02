@@ -1,7 +1,9 @@
-use kubectl_plugin::resources;
 pub(crate) mod cli_utils;
+pub mod console_logger;
+pub mod constants;
 
 use clap::Parser;
+use kubectl_plugin::resources;
 use std::{env, path::PathBuf};
 
 #[derive(Parser, Debug)]
@@ -53,6 +55,14 @@ impl CliArgs {
             cli_utils::Operations::LocalpvHostpath(ref mut operations) => {
                 operations.cli_args.namespace = ns;
                 operations.cli_args.kubeconfig = path
+            }
+            cli_utils::Operations::Upgrade(ref mut upgrade_args) => {
+                upgrade_args.namespace = ns;
+                upgrade_args.kubeconfig = path
+            }
+            cli_utils::Operations::Get(ref mut get_able) => {
+                get_able.namespace = ns;
+                get_able.kubeconfig = path
             }
         }
         Ok(args)
