@@ -31,32 +31,33 @@ status: provisional
 
 This proposal introduces a volume cloning feature for Mayastor. A clone is a copy of
 an existing volume that can be used independently from the source volume. The feature
-will leverage Mayastor's existing snapshot and restore capabilities to efficiently
+will use Mayastor's existing snapshot and restore capabilities to efficiently
 implement cloning with copy-on-write (COW) functionality.
-
-Volume cloning will enable users to quickly create duplicates of volumes for various
-use cases such as development, testing, data analysis, and backup, without having to
-copy all the data.
 
 ## Motivation
 
 This feature addresses the need identified in
 [GitHub issue #1718](https://github.com/openebs/mayastor/issues/1718).
 
-Volume cloning addresses several key use cases:
+The primary motivation for this feature is to implement direct PVC-to-PVC cloning 
+support in the Kubernetes CSI interface. OpenEBS Mayastor already supports 
+the functionality of creating copies of volumes through the 'PVC -> snapshot -> PVC' 
+workflow, but this proposal aims to:
 
-1. **Development and Testing**: Developers can create clones of production volumes to
-   use in test environments without affecting production data.
-2. **Rapid Deployment**: Users can create templates or golden images and clone them
-   for quick deployment of new instances.
-3. **Data Analysis**: Data scientists can clone datasets to perform analysis without
-   risking changes to the original data.
-4. **Backup and Recovery**: Clones can serve as part of a backup strategy, providing
-   point-in-time copies.
-5. **Efficient Storage Utilization**: Using COW technology, clones initially share
-   blocks with the source volume, consuming minimal additional storage.
-6. **KubeVirt/CDI Support**: This feature would significantly improve the experience
-   of running KubeVirt/CDI workloads, enabling more efficient VM management.
+1. **Simplify the Kubernetes API Workflow**: Enable direct PVC-to-PVC cloning 
+   without requiring users to manually create and manage intermediate snapshots.
+
+2. **Improve Compatibility**: Support tooling and applications that expect or 
+   can benefit from direct volume cloning capabilities being available through 
+   the standard Kubernetes CSI interface (e.g. KubeVirt/CDI).
+
+3. **Enhance User Experience**: Reduce the number of steps and API objects 
+   required to create a volume clone, making the process more intuitive and 
+   less error-prone.
+
+This implementation will use Mayastor's existing snapshot and restore 
+capabilities with copy-on-write (COW) functionality, but will present them through 
+the standardized Kubernetes volume cloning interface.
 
 ## Goals
 
