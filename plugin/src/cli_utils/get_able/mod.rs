@@ -3,6 +3,7 @@ use anyhow::Result;
 use clap::Parser;
 use std::path::PathBuf;
 
+/// Args pertaining to the `kubectl openebs get upgrade-status` command specifically.
 #[derive(Debug, Parser)]
 pub struct UpgradeStatusArgs {
     /// Helm release name for the openebs helm chart.
@@ -14,6 +15,7 @@ pub struct UpgradeStatusArgs {
     pub helm_storage_driver: String,
 }
 
+/// Command structure and common arguments related to `kubectl openebs get` commands.
 #[derive(Debug, Parser)]
 pub struct GetAble {
     /// Kubernetes namespace of GET-able resource.
@@ -36,6 +38,7 @@ pub enum Resource {
 }
 
 impl GetAble {
+    /// Perform a GET-like operation on a GetAble variant.
     pub async fn get(&self) -> Result<()> {
         match &self.resources {
             Resource::UpgradeStatus(args) => {

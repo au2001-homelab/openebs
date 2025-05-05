@@ -250,6 +250,9 @@ pub(crate) fn upgrade_job_cluster_role_binding(
     }
 }
 
+/// Creates ConfigMap structures (maps) which let you create a ConfigMap with helm set file,
+/// file contents. This ConfigMap would be mounted to the upgrade-job's Pod and will be used
+/// alongside a helm set-file option.
 pub(crate) fn config_map_data(
     set_file_arg: &[String],
 ) -> Result<(BTreeMap<String, String>, HashMap<String, String>)> {
@@ -276,6 +279,7 @@ pub(crate) fn config_map_data(
     Ok((data_map, upgrade_map))
 }
 
+/// Prepare the set-file arg which will be passed down to the upgrade-job.
 pub(crate) fn job_set_file_args(
     set_file_arg: &[String],
     set_file_map: Option<HashMap<String, String>>,
@@ -304,6 +308,7 @@ pub(crate) fn job_set_file_args(
     Ok(Some(helm_args_set_file.join(",")))
 }
 
+/// Returns the actual ConfigMap resource from set-file data.
 pub(crate) fn upgrade_configmap(
     data: BTreeMap<String, String>,
     namespace: &str,

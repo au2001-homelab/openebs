@@ -40,6 +40,8 @@ use upgrade::common::kube::client::list_pods;
 pub mod cli;
 pub mod k8s;
 
+/// This type could be used to gather container image data from several sources and
+/// then reasoning among these options and picking the most appropriate values.
 pub struct ImageProperties {
     pub pull_secrets: Option<Vec<k8s_openapi::api::core::v1::LocalObjectReference>>,
     pub registry: String,
@@ -47,7 +49,26 @@ pub struct ImageProperties {
 }
 
 impl ImageProperties {
+    /// Create an instance of ImageProperties from an openebs/openebs helm release.
     pub async fn new_from_helm_release(release_name: &str, args: &UpgradeArgs) -> Result<Self> {
+        /* The strategy we use here assumes that users don't change the image name, i.e. the
+         *     - image: <value>
+         *       name: <value> // This one.
+         * We find one of the CSI controllers from the CSI LocalPVs and Mayastor or the LocalPV
+         * Provisioner.
+         * Once we have found this Pod, we try to find on the containers that we know will exist
+         * here. Other CSI sidecars may also exist, so we pick out our container based on container
+         * name. As we know, we expect users to not change it, as it is of no use as far as a
+         * container configuration is concerned. It identifies containers uniquely, and we already
+         * achieve this with our names.
+         * We split the 'image' of the containers we have found above based on the '/' character.
+         * If the image could be split into 3 sections by splitting along '/', then we use the first
+         * section as the image registry. This may not work for many case, and uses a naive
+         * approach. For those cases, a user should use the `--registry <value>` option flag.
+         * The same Pod's ImagePullSecrets and ImagePullPolicy sections are used to populate those
+         * specific sections.
+         */
+
         let hostpath_localpv_image_name = format!("{release_name}-localpv-provisioner");
         let openebs_containers: HashSet<&str> = [
             "api-rest",
@@ -58,10 +79,13 @@ impl ImageProperties {
         .into_iter()
         .collect();
 
+        // The 'app in <labels>' is used to pick out the CSI Controllers from the LocalPV, Mayastor
+        // and the Hostpath Provisioner.
         let openebs_pod_spec = list_pods(args.namespace.clone(), Some("app in (api-rest,localpv-provisioner,openebs-zfs-controller,openebs-lvm-controller)".to_string()), None).await
             .map_err(|error| anyhow!(error))?
             .into_iter()
             .filter_map(|pod| pod.spec)
+            // Find the first Pod we encounter from among the above Pods.
             .find(|pod_spec| pod_spec.containers.iter().map(|container| container.name.as_str()).any(|name| openebs_containers.contains(&name)))
             .ok_or(anyhow!("Couldn't pick out an openebs container, one of '{openebs_containers:?}', from openebs Pods"))?;
 
@@ -85,6 +109,7 @@ impl ImageProperties {
     }
 }
 
+/// Returns a fully prepared upgrade-job object.
 async fn upgrade_job(args: &UpgradeArgs, release_name: &str, set_file: String) -> Result<Job> {
     let image_properties: ImageProperties =
         ImageProperties::new_from_helm_release(release_name, args).await?;
@@ -205,6 +230,7 @@ async fn upgrade_job(args: &UpgradeArgs, release_name: &str, set_file: String) -
     })
 }
 
+/// Returns the first instance of upgrade-job Event that we find for this version of upgrade.
 pub async fn get_latest_upgrade_event(
     namespace: &str,
     upgrade_events_field_selector: &str,
@@ -220,6 +246,7 @@ pub async fn get_latest_upgrade_event(
     .ok_or(anyhow!("No upgrade event present"))
 }
 
+/// This is used to deserialize the JSON data present in an upgrade-job event.
 #[derive(Clone, Deserialize)]
 #[serde(rename_all(deserialize = "camelCase"))]
 pub(crate) struct UpgradeEvent {
@@ -228,6 +255,7 @@ pub(crate) struct UpgradeEvent {
     message: String,
 }
 
+/// The initial upgrade-job Event is logged appropriately, else a failure is logged.
 async fn handle_upgrade_event(
     latest_event: Event,
     release_name: &str,
@@ -253,6 +281,7 @@ async fn handle_upgrade_event(
     Ok(())
 }
 
+/// Start upgrade by creating an upgrade-job and such.
 pub async fn apply_upgrade(args: &UpgradeArgs) -> Result<()> {
     let k8s_client = kube_proxy::client_from_kubeconfig(args.kubeconfig.clone()).await?;
     let release_name = match args.release_name.as_ref() {
@@ -301,6 +330,8 @@ pub async fn apply_upgrade(args: &UpgradeArgs) -> Result<()> {
     Ok(())
 }
 
+/// Flatten Tokio errors from spawning tasks and errors from failed (yet successfully spawn-ed)
+/// tasks.
 async fn joined_flatten<T>(handle: JoinHandle<Result<T>>) -> Result<T> {
     match handle.await.map_err(|err| anyhow!(err)) {
         Ok(Ok(result)) => Ok(result),
@@ -309,6 +340,7 @@ async fn joined_flatten<T>(handle: JoinHandle<Result<T>>) -> Result<T> {
     }
 }
 
+/// Create upgrade kubernetes resources.
 pub async fn create_upgrade_resources(
     args: &UpgradeArgs,
     release_name: &str,
@@ -393,6 +425,7 @@ pub async fn create_upgrade_resources(
     Ok(())
 }
 
+/// Delete upgrade kubernetes resources.
 pub async fn delete_upgrade_resources(
     release_name: &str,
     ns: &str,
@@ -473,6 +506,7 @@ pub async fn delete_upgrade_resources(
     Ok(())
 }
 
+/// Create a kubernetes resource if an object of the same doesn't already exist.
 pub async fn idempotent_create_resource<K>(
     client: Api<K>,
     resource: K,
@@ -508,6 +542,7 @@ where
         })
 }
 
+/// Delete a kubernetes object, if an object wih the same name exists.
 pub async fn idempotent_delete_resource<K>(
     client: Api<K>,
     resource_name: String,

@@ -17,6 +17,12 @@ use upgrade::common::kube::client::{
 pub mod resources;
 pub mod upgrade_status;
 
+/// Pick out the release data from a Kubernetes ConfigMap or a Secret.
+/// Args:
+///   - source: An instance of a ConfigMap or a Secret.
+///
+/// Output:
+///   - Returns a ByteString for a Secret and a String for a ConfigMap.
 macro_rules! extract_data {
     ($source:ident) => {{
         let driver = kind(&$source);
@@ -31,6 +37,7 @@ macro_rules! extract_data {
     }};
 }
 
+/// This prepares a String with the upgrade naming constant releaseName-componentName-version.
 pub fn upgrade_name_concat(release_name: &str, component_name: &str) -> String {
     format!(
         "{release_name}-{component_name}-{release_version}",
@@ -38,6 +45,7 @@ pub fn upgrade_name_concat(release_name: &str, component_name: &str) -> String {
     )
 }
 
+/// Delete pre-existing upgrade events for this version of the upgrade-job, if any.
 pub async fn delete_older_upgrade_events(
     kube_event_client: Api<Event>,
     upgrade_event_field_selector: &str,
@@ -60,6 +68,8 @@ pub async fn delete_older_upgrade_events(
     Ok(())
 }
 
+/// Decompress from G-zip2 and decode from Base64 a u8 buffer with helm release data (from a helm
+/// storage driver).
 fn decode_decompress_data(data: impl AsRef<[u8]>) -> Result<Vec<u8>> {
     let data_compressed = base64_engine::decode(&STANDARD, data).map_err(|error| anyhow!(error))?;
 
@@ -72,6 +82,7 @@ fn decode_decompress_data(data: impl AsRef<[u8]>) -> Result<Vec<u8>> {
     Ok(data)
 }
 
+/// This is used to deserialize the data structure for helm release.
 #[derive(Debug, Deserialize)]
 pub struct HelmChartRelease {
     chart: Option<HelmChartReleaseChart>,
@@ -88,6 +99,8 @@ pub struct HelmChartReleaseChart {
 pub struct HelmChartReleaseChartMetadata {
     name: String,
 }
+
+/// Find the helm release name for a release of the openebs/openebs chart in a given namespace.
 pub async fn helm_release_name(namespace: &str, helm_storage_driver: &str) -> Result<String> {
     match helm_storage_driver {
         "" | "secret" | "secrets" => {
@@ -159,6 +172,7 @@ pub async fn helm_release_name(namespace: &str, helm_storage_driver: &str) -> Re
     }
 }
 
+/// List kubernetes Events.
 pub async fn list_events(
     namespace: &str,
     label_selector: Option<String>,

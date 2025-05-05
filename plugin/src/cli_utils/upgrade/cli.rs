@@ -3,6 +3,7 @@ use anyhow::Result;
 use clap::Parser;
 use std::path::PathBuf;
 
+/// Upgrade arguments.
 #[derive(Debug, Parser)]
 pub struct UpgradeArgs {
     #[arg(skip)]
@@ -64,6 +65,7 @@ pub struct UpgradeArgs {
 }
 
 impl UpgradeArgs {
+    /// Start an upgrade based on supplied inputs.
     pub async fn apply(&self) -> Result<()> {
         apply_upgrade(self).await
     }
