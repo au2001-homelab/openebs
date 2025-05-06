@@ -12,7 +12,7 @@ use crate::{
     upgrade_labels,
 };
 use anyhow::{anyhow, Result};
-use cli::UpgradeArgs;
+use cli::UpgradeCommonArgs;
 use k8s_openapi::{
     api::{
         batch::v1::{Job, JobSpec},
@@ -50,7 +50,10 @@ pub struct ImageProperties {
 
 impl ImageProperties {
     /// Create an instance of ImageProperties from an openebs/openebs helm release.
-    pub async fn new_from_helm_release(release_name: &str, args: &UpgradeArgs) -> Result<Self> {
+    pub async fn new_from_helm_release(
+        release_name: &str,
+        args: &UpgradeCommonArgs,
+    ) -> Result<Self> {
         /* The strategy we use here assumes that users don't change the image name, i.e. the
          *     - image: <value>
          *       name: <value> // This one.
@@ -110,7 +113,11 @@ impl ImageProperties {
 }
 
 /// Returns a fully prepared upgrade-job object.
-async fn upgrade_job(args: &UpgradeArgs, release_name: &str, set_file: String) -> Result<Job> {
+async fn upgrade_job(
+    args: &UpgradeCommonArgs,
+    release_name: &str,
+    set_file: String,
+) -> Result<Job> {
     let image_properties: ImageProperties =
         ImageProperties::new_from_helm_release(release_name, args).await?;
     let upgrade_image = format!(
@@ -186,7 +193,7 @@ async fn upgrade_job(args: &UpgradeArgs, release_name: &str, set_file: String) -
                             EnvVar {
                                 // Ref: https://github.com/helm/helm/blob/main/cmd/helm/helm.go#L76
                                 name: "HELM_DRIVER".to_string(),
-                                value: env::var("HELM_DRIVER").ok(),
+                                value: Some(args.helm_storage_driver.clone()),
                                 ..Default::default()
                             },
                         ]),
@@ -282,7 +289,7 @@ async fn handle_upgrade_event(
 }
 
 /// Start upgrade by creating an upgrade-job and such.
-pub async fn apply_upgrade(args: &UpgradeArgs) -> Result<()> {
+pub async fn apply_upgrade(args: &UpgradeCommonArgs) -> Result<()> {
     let k8s_client = kube_proxy::client_from_kubeconfig(args.kubeconfig.clone()).await?;
     let release_name = match args.release_name.as_ref() {
         Some(name) => name.clone(),
@@ -342,7 +349,7 @@ async fn joined_flatten<T>(handle: JoinHandle<Result<T>>) -> Result<T> {
 
 /// Create upgrade kubernetes resources.
 pub async fn create_upgrade_resources(
-    args: &UpgradeArgs,
+    args: &UpgradeCommonArgs,
     release_name: &str,
     k8s_client: Client,
 ) -> Result<()> {

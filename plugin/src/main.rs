@@ -57,12 +57,8 @@ impl CliArgs {
                 operations.cli_args.kubeconfig = path
             }
             cli_utils::Operations::Upgrade(ref mut upgrade_args) => {
-                upgrade_args.namespace = ns;
-                upgrade_args.kubeconfig = path
-            }
-            cli_utils::Operations::Get(ref mut get_able) => {
-                get_able.namespace = ns;
-                get_able.kubeconfig = path
+                upgrade_args.cli_args.namespace = ns;
+                upgrade_args.cli_args.kubeconfig = path;
             }
         }
         Ok(args)
