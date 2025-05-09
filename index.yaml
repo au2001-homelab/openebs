@@ -3,14 +3,14 @@ entries:
   openebs:
   - annotations:
       helm.sh/images: |
-        - name: bats
-          image: bats/bats:1.8.2
         - name: etcd
           image: docker.io/bitnami/etcd:3.5.6-debian-11-r10
         - name: kubectl
           image: docker.io/bitnami/kubectl:1.25.15
-        - name: promtail
-          image: docker.io/grafana/promtail:2.8.3
+        - name: alloy
+          image: docker.io/grafana/alloy:v1.8.1
+        - name: loki
+          image: docker.io/grafana/loki:3.4.2
         - name: alpine-bash
           image: docker.io/openebs/alpine-bash:4.1.0
         - name: alpine-sh
@@ -37,8 +37,8 @@ entries:
           image: docker.io/openebs/mayastor-obs-callhome:develop
         - name: mayastor-operator-diskpool
           image: docker.io/openebs/mayastor-operator-diskpool:develop
-        - name: loki
-          image: grafana/loki:2.6.1
+        - name: k8s-sidecar
+          image: kiwigrid/k8s-sidecar:1.30.2
         - name: nats
           image: nats:2.9.17-alpine
         - name: nats-box
@@ -48,17 +48,21 @@ entries:
         - name: prometheus-nats-exporter
           image: natsio/prometheus-nats-exporter:0.11.0
         - name: linux-utils
-          image: openebs/linux-utils:4.0.0
-        - name: linux-utils
           image: openebs/linux-utils:4.1.0
         - name: lvm-driver
           image: openebs/lvm-driver:1.7.0-develop
         - name: provisioner-localpv
-          image: openebs/provisioner-localpv:4.1.2
+          image: openebs/provisioner-localpv:4.2.0
         - name: provisioner-localpv
           image: openebs/provisioner-localpv:4.3.0-develop
         - name: zfs-driver
           image: openebs/zfs-driver:2.8.0-develop
+        - name: mc
+          image: quay.io/minio/mc:RELEASE.2024-11-21T17-21-54Z
+        - name: minio
+          image: quay.io/minio/minio:RELEASE.2024-12-18T13-15-44Z
+        - name: prometheus-config-reloader
+          image: quay.io/prometheus-operator/prometheus-config-reloader:v0.81.0
         - name: csi-attacher
           image: registry.k8s.io/sig-storage/csi-attacher:v4.3.0
         - name: csi-node-driver-registrar
@@ -81,11 +85,19 @@ entries:
           image: registry.k8s.io/sig-storage/snapshot-controller:v6.3.3
     apiVersion: v2
     appVersion: 4.3.0-develop
-    created: "2025-04-25T11:54:22.552952648Z"
+    created: "2025-05-09T12:16:42.074901169Z"
     dependencies:
     - name: openebs-crds
       repository: ""
       version: 4.3.0-develop
+    - condition: loki.enabled
+      name: loki
+      repository: https://grafana.github.io/helm-charts
+      version: 6.29.0
+    - condition: alloy.enabled
+      name: alloy
+      repository: https://grafana.github.io/helm-charts
+      version: 1.0.1
     - name: localpv-provisioner
       repository: https://openebs.github.io/dynamic-localpv-provisioner
       version: 4.3.0-develop
@@ -102,7 +114,7 @@ entries:
       repository: https://openebs.github.io/mayastor-extensions
       version: 0.0.0
     description: Containerized Attached Storage for Kubernetes
-    digest: ffbd5da35c106df869f8e863900d04ac276c0d8fa5b7578250c10d8d893d7aab
+    digest: cd0c7c93bd4ae132edf6d48fb3ac28e0015bd0d574160b4a7293cac0d145cd13
     home: https://www.openebs.io/
     icon: https://raw.githubusercontent.com/cncf/artwork/HEAD/projects/openebs/icon/color/openebs-icon-color.png
     keywords:
@@ -116,7 +128,7 @@ entries:
     sources:
     - https://github.com/openebs/openebs
     urls:
-    - https://github.com/openebs/openebs/releases/download/openebs-4.3.0-develop/openebs-4.3.0-develop.tgz
+    - https://openebs.github.io/openebs/openebs-4.3.0-develop.tgz
     version: 4.3.0-develop
   - annotations:
       helm.sh/images: |
@@ -465,4 +477,4 @@ entries:
     urls:
     - https://github.com/openebs/openebs/releases/download/openebs-4.0.0/openebs-4.0.0.tgz
     version: 4.0.0
-generated: "2025-04-25T11:54:22.552998664Z"
+generated: "2025-05-09T12:16:42.030589997Z"
