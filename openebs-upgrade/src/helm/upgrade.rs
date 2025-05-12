@@ -5,15 +5,16 @@ use crate::{
     },
     helm::data_plane_upgrader::DataPlaneUpgrader,
 };
-use futures::TryFutureExt;
-use semver::Version;
-use snafu::ensure;
 use upgrade::{
     common::{error::PartialRebuildNotAllowed, kube::client as KubeClient},
     events::event_recorder::EventRecorder,
     helm::chart::HelmValuesCollection,
     helm::upgrade::HelmUpgrader,
 };
+
+use futures::TryFutureExt;
+use semver::Version;
+use snafu::ensure;
 
 pub mod config;
 pub mod upgrader;
@@ -46,7 +47,7 @@ pub async fn upgrade(
 
     if let Some(ref event_recorder) = ev {
         event_recorder
-            .publish_normal("Upgrading helm chart...", "HelmUpgrade")
+            .publish_normal("Upgrading helm chart", "HelmUpgradeStart")
             .await?;
     }
 
@@ -60,6 +61,12 @@ pub async fn upgrade(
             Err(error)
         })
         .await?;
+
+    if let Some(ref event_recorder) = ev {
+        event_recorder
+            .publish_normal("Upgraded helm chart", "HelmUpgradeComplete")
+            .await?;
+    }
 
     if let Some(upgrader) = data_plane_upgrader {
         mayastor_data_plane_upgrade(upgrader, final_values, &source_version, ev.as_deref()).await?;
@@ -114,7 +121,7 @@ async fn mayastor_data_plane_upgrade(
 
     if let Some(event_recorder) = ev {
         event_recorder
-            .publish_normal("Upgrading Mayastor data-plane...", "DataPlaneUpgrade")
+            .publish_normal("Upgrading data-plane", "DataPlaneUpgradeStart")
             .await?;
     }
 
@@ -137,7 +144,7 @@ async fn mayastor_data_plane_upgrade(
 
     if let Some(event_recorder) = ev {
         event_recorder
-            .publish_normal("Upgraded Mayastor data-plane", "DataPlaneUpgrade")
+            .publish_normal("Upgraded data-plane", "DataPlaneUpgradeComplete")
             .await?;
     }
 

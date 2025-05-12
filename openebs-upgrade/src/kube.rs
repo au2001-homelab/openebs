@@ -2,10 +2,11 @@ use crate::{
     constants::HTTP_DATA_PAGE_SIZE,
     error::{FailedToCreateKubernetesClient, ListEventsWithLabelAndField, Result},
 };
+use upgrade::common::kube::client::{client, paginated_list};
+
 use k8s_openapi::api::events::v1::Event;
 use kube::api::{Api, ListParams};
 use snafu::ResultExt;
-use upgrade::common::kube::client::{client, paginated_list};
 
 /// List Kubernetes Events in a paginated manner.
 pub async fn list_events(

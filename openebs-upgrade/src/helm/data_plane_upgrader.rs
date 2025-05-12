@@ -1,5 +1,6 @@
-use k8s_openapi::api::core::v1::Pod;
 use upgrade::{helm::chart::HelmValuesCollection, upgrade_data_plane::upgrade_data_plane};
+
+use k8s_openapi::api::core::v1::Pod;
 use url::Url;
 
 /// Instances of this type can upgrade the mayastor data plane.

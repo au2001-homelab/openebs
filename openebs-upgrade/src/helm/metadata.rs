@@ -3,6 +3,7 @@ use crate::{
     error::{FailedYamlVecDeserialize, Result},
     utils::exec_tokio_command,
 };
+
 use semver::Version;
 use serde::Deserialize;
 use snafu::ResultExt;

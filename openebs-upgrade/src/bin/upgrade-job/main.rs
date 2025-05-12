@@ -1,6 +1,4 @@
-use clap::Parser;
 use cli_args::CliArgs;
-use color_eyre::eyre::{Result, WrapErr};
 use openebs_upgrade::{
     validate_and_upgrade, DataPlaneUpgrader, HelmCommandConfig, HelmUpgradeConfig,
 };
@@ -9,6 +7,9 @@ use utils::{
     print_package_info,
     tracing_telemetry::{FmtLayer, TracingTelemetry},
 };
+
+use clap::Parser;
+use color_eyre::eyre::{Result, WrapErr};
 
 mod cli_args;
 
@@ -49,6 +50,7 @@ async fn main() -> Result<()> {
     let mut event_recorder = EventRecorder::builder()
         .with_pod_name(cli_args.pod_name)
         .with_namespace(cli_args.namespace)
+        .with_product_name("Openebs".to_string())
         .build()
         .await?;
 
@@ -58,5 +60,11 @@ async fn main() -> Result<()> {
         Some(&mut event_recorder),
     )
     .await
-    .wrap_err("Upgrade failed")
+    .wrap_err("Upgrade failed")?;
+
+    // This makes sure that the event worker attempts to publish
+    // all of its events. It waits for the event worker to exit.
+    event_recorder.shutdown_worker().await;
+
+    Ok(())
 }

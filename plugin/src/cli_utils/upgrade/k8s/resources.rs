@@ -1,4 +1,5 @@
 use crate::constants::{upgrade_obj_suffix, UPGRADE_CONFIG_MAP_MOUNT_PATH};
+
 use anyhow::{anyhow, Result};
 use k8s_openapi::api::{
     core::v1::{ConfigMap, ServiceAccount},
@@ -158,7 +159,7 @@ pub(crate) fn upgrade_job_cluster_role(
             },
             PolicyRule {
                 api_groups: Some(vec!["batch"].into_vec()),
-                resources: Some(vec!["cronjobs"].into_vec()),
+                resources: Some(vec!["cronjobs", "jobs"].into_vec()),
                 verbs: vec!["create", "list", "delete", "get", "patch"].into_vec(),
                 ..Default::default()
             },
@@ -191,7 +192,7 @@ pub(crate) fn upgrade_job_cluster_role(
             },
             PolicyRule {
                 api_groups: Some(vec!["storage.k8s.io"].into_vec()),
-                resources: Some(vec!["storageclasses"].into_vec()),
+                resources: Some(vec!["storageclasses", "csidrivers"].into_vec()),
                 verbs: vec!["create", "list", "delete", "get", "patch"].into_vec(),
                 ..Default::default()
             },

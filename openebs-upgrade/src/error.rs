@@ -33,6 +33,9 @@ pub enum UpgradeError {
     #[snafu(display("Failed to convert Vec<u8> to String"))]
     ByteVectorToString { source: std::string::FromUtf8Error },
 
+    #[snafu(display("Failed to trim 'v' off from helm version"))]
+    TrimVOffFromVersion,
+
     #[snafu(display("Failed to parse semver version from '{version}'"))]
     ParseSemverVersion {
         source: semver::Error,

@@ -1,11 +1,12 @@
-use clap::Parser;
-use std::path::PathBuf;
-use url::Url;
 use utils::{
     package_description,
     tracing_telemetry::{parse_key_value, FmtStyle, KeyValue},
     version_info_str,
 };
+
+use clap::Parser;
+use std::path::PathBuf;
+use url::Url;
 
 /// These are the supported cli configuration options for upgrade.
 #[derive(Parser)]

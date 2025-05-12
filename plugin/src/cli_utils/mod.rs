@@ -1,10 +1,11 @@
-use clap::Parser;
 use kubectl_plugin::resources;
 use localpv::hostpath;
 use localpv::lvm;
 use localpv::zfs;
 use plugin::{init_tracing_with_jaeger, ExecuteOperation};
 use upgrade::cli::Upgrade;
+
+use clap::Parser;
 
 pub mod localpv;
 pub(crate) mod mayastor;

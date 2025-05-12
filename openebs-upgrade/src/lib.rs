@@ -2,8 +2,9 @@ use crate::{
     error::{FailedUpgrade, Result},
     helm::upgrade::upgrade,
 };
-use snafu::ResultExt;
 use upgrade::events::event_recorder::EventRecorder;
+
+use snafu::ResultExt;
 
 pub use crate::helm::{
     data_plane_upgrader::DataPlaneUpgrader,

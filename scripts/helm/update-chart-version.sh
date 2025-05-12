@@ -18,18 +18,18 @@ Options:
 Examples:
   $(basename "$0") --chart-version 1.2.3 --app-version 1.2.3  \
                    --localpv-provisioner-version <version>  --zfs-localpv-version <version> \
-                   --lvm-localpv-version <version>  --mayastor-version <version>  
+                   --lvm-localpv-version <version>  --mayastor-version <version>
 EOF
 }
 
 # Chart update
 update_chart_yaml() {
-  local VERSION=$1
-  local APP_VERSION=$2
-  local LOCALPV_HOSTPATH_VERSION=$3
-  local LOCALPV_ZFS_VERSION=$4
-  local LOCALPV_LVM_VERSION=$5
-  local MAYASTOR_VERSION=$6
+  local VERSION=${1#v}
+  local APP_VERSION=${2#v}
+  local LOCALPV_HOSTPATH_VERSION=${3#v}
+  local LOCALPV_ZFS_VERSION=${4#v}
+  local LOCALPV_LVM_VERSION=${5#v}
+  local MAYASTOR_VERSION=${6#v}
 
   yq_ibl ".version = \"$VERSION\" | .appVersion = \"$APP_VERSION\"" "$CHART_YAML"
   yq_ibl "(.dependencies[] | select(.name == \"openebs-crds\") | .version) = \"$APP_VERSION\"" "$CHART_YAML"
@@ -51,7 +51,7 @@ MAYASTOR_VERSION=""
 
 # Paths
 SCRIPT_DIR="$(dirname "$(realpath "${BASH_SOURCE[0]:-"$0"}")")"
-ROOT_DIR="$SCRIPT_DIR/../../"
+ROOT_DIR="$SCRIPT_DIR/../.."
 CHART_DIR="$ROOT_DIR/charts"
 CHART_YAML="$CHART_DIR/Chart.yaml"
 CRD_CHART_NAME="openebs-crds"
@@ -72,7 +72,7 @@ while [ "$#" -gt 0 ]; do
     --zfs-localpv-version) shift; LOCALPV_ZFS_VERSION=$1; shift ;;
     --lvm-localpv-version) shift; LOCALPV_LVM_VERSION=$1; shift ;;
     --mayastor-version) shift; MAYASTOR_VERSION=$1; shift ;;
-    *) help; die "Unknown option: $1" ;;
+    *) help; log_fatal "Unknown option: $1" ;;
   esac
 done
 
