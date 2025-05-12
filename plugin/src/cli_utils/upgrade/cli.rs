@@ -1,5 +1,13 @@
-use crate::cli_utils::upgrade::apply_upgrade;
-use crate::cli_utils::upgrade::k8s::upgrade_status;
+use crate::{
+    cli_utils::upgrade::{
+        apply_upgrade, delete_upgrade_resources,
+        k8s::{helm_release_name, upgrade_job_completed, upgrade_name_concat, upgrade_status},
+        upgrade_preflight_check,
+    },
+    console_logger,
+};
+use upgrade::common::kube::client::client;
+
 use anyhow::Result;
 use clap::{Parser, Subcommand};
 use plugin::ExecuteOperation;
@@ -80,13 +88,33 @@ pub struct Upgrade {
 pub enum UpgradeSubcommand {
     /// Fetch the status of an ongoing upgrade.
     Status,
+    /// Delete upgrade resources.
+    Delete {
+        /// Forcibly delete upgrade resources.
+        #[arg(short, long, default_value_t = false)]
+        force: bool,
+    },
 }
 
 impl Upgrade {
     pub async fn execute(&self) -> Result<()> {
         match &self.subcommand {
             Some(subcommand) => subcommand.execute(&self.cli_args).await,
-            None => apply_upgrade(&self.cli_args).await,
+            None => {
+                let release_name = match &self.cli_args.release_name {
+                    Some(name) => name.clone(),
+                    None => {
+                        helm_release_name(
+                            self.cli_args.namespace.as_str(),
+                            self.cli_args.helm_storage_driver.as_str(),
+                        )
+                        .await?
+                    }
+                };
+
+                upgrade_preflight_check(&self.cli_args, release_name.as_str()).await?;
+                apply_upgrade(&self.cli_args, release_name.as_str()).await
+            }
         }
     }
 }
@@ -106,6 +134,34 @@ impl ExecuteOperation for UpgradeSubcommand {
                     cli_args.helm_storage_driver.clone(),
                 )
                 .await
+            }
+            Self::Delete { force } => {
+                let release_name = match cli_args.release_name.as_deref() {
+                    Some(name) => name.to_string(),
+                    None => {
+                        helm_release_name(
+                            cli_args.namespace.as_str(),
+                            cli_args.helm_storage_driver.as_str(),
+                        )
+                        .await?
+                    }
+                };
+                let job_name = upgrade_name_concat(release_name.as_str(), "upgrade");
+
+                if upgrade_job_completed(cli_args.namespace.as_str(), job_name.as_str()).await?
+                    || *force
+                {
+                    delete_upgrade_resources(
+                        release_name.as_str(),
+                        cli_args.namespace.as_str(),
+                        client().await?,
+                    )
+                    .await?;
+                    return Ok(());
+                }
+
+                console_logger::error("Error","Can't delete an incomplete upgrade job. Please try with `--force` flag to forcefully remove upgrade resources");
+                Ok(())
             }
         }
     }

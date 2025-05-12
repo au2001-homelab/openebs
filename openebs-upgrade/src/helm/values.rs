@@ -2,14 +2,15 @@ use crate::{
     constants::FOUR_DOT_O,
     error::{FailedCheckingInstallingCRDs, FailedTempFileCreation, Result},
 };
-use semver::Version;
-use snafu::ResultExt;
-use std::{collections::HashMap, path::Path};
-use tempfile::NamedTempFile;
 use upgrade::{
     common::kube::client as KubeClient,
     helm::yaml::yq::{YamlKey, YqV4},
 };
+
+use semver::Version;
+use snafu::ResultExt;
+use std::{collections::HashMap, path::Path};
+use tempfile::NamedTempFile;
 
 /// Generate values file to override select helm values options.
 pub(crate) async fn generate_values_file<P: AsRef<Path>>(

@@ -3,6 +3,7 @@ use crate::cli_utils::upgrade::{
     k8s::{helm_release_name, upgrade_name_concat},
     UpgradeEvent,
 };
+
 use anyhow::{anyhow, Result};
 
 /// Get the upgrade status from an upgrade-job's k8s Event and print it to console.
@@ -17,7 +18,7 @@ pub async fn get_upgrade_status(
     };
 
     let events_field_selector = format!(
-        "involvedObject.kind=Job,involvedObject.name={name}",
+        "regarding.kind=Job,regarding.name={name}",
         name = upgrade_name_concat(release_name.as_str(), "upgrade")
     );
 

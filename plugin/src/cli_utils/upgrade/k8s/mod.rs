@@ -1,8 +1,12 @@
 use crate::constants::{upgrade_obj_suffix, HTTP_DATA_PAGE_SIZE};
+use upgrade::common::kube::client::{
+    client, list_configmaps, list_secrets, paginated_list, paginated_list_metadata,
+};
+
 use anyhow::{anyhow, Result};
 use base64::engine::{general_purpose::STANDARD, Engine as base64_engine};
 use flate2::read::GzDecoder;
-use k8s_openapi::{api::events::v1::Event, kind};
+use k8s_openapi::api::{batch::v1::Job, events::v1::Event};
 use kube::{
     api::{Api, DeleteParams, ListParams},
     core::PartialObjectMeta,
@@ -10,9 +14,6 @@ use kube::{
 };
 use serde::Deserialize;
 use std::io::Read;
-use upgrade::common::kube::client::{
-    client, list_configmaps, list_secrets, paginated_list, paginated_list_metadata,
-};
 
 pub mod resources;
 pub mod upgrade_status;
@@ -23,8 +24,11 @@ pub mod upgrade_status;
 ///
 /// Output:
 ///   - Returns a ByteString for a Secret and a String for a ConfigMap.
+#[macro_export]
 macro_rules! extract_data {
     ($source:ident) => {{
+        use k8s_openapi::kind;
+
         let driver = kind(&$source);
         $source
             .data
@@ -70,7 +74,7 @@ pub async fn delete_older_upgrade_events(
 
 /// Decompress from G-zip2 and decode from Base64 a u8 buffer with helm release data (from a helm
 /// storage driver).
-fn decode_decompress_data(data: impl AsRef<[u8]>) -> Result<Vec<u8>> {
+pub fn decode_decompress_data(data: impl AsRef<[u8]>) -> Result<Vec<u8>> {
     let data_compressed = base64_engine::decode(&STANDARD, data).map_err(|error| anyhow!(error))?;
 
     let mut gzip_decoder = GzDecoder::new(&data_compressed[..]);
@@ -193,4 +197,31 @@ pub async fn list_events(
     paginated_list(events_api, &mut events, Some(list_params)).await?;
 
     Ok(events)
+}
+
+/// Check if Job is completed.
+pub async fn upgrade_job_completed(ns: &str, job_name: &str) -> Result<bool> {
+    let job_client: Api<Job> = Api::namespaced(client().await?, ns);
+    let maybe_job = job_client
+        .get_opt(job_name)
+        .await
+        .map_err(|err| anyhow!("Failed to get Job '{job_name}' in '{ns}' namespace: {err}"))?;
+
+    match maybe_job {
+        Some(job) => {
+            let status = job.status.as_ref().ok_or(anyhow!(
+                "Job '{job_name}' in '{ns}' namespace does not have a status"
+            ))?;
+
+            let job_completed = match status.succeeded {
+                None => false,
+                Some(count) => count == 1,
+            };
+            Ok(job_completed)
+        }
+
+        None => Err(anyhow!(
+            "No Job exists with the name '{job_name}' in the '{ns}' namespace."
+        )),
+    }
 }

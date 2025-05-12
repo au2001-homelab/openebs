@@ -1,20 +1,25 @@
-use async_trait::async_trait;
-use semver::Version;
-use std::path::PathBuf;
-use tracing::info;
 use upgrade::helm::{
     chart::{HelmValuesCollection, UmbrellaValues},
     client::HelmReleaseClient,
     upgrade::{HelmUpgradeRunner, HelmUpgrader},
 };
 
+use async_trait::async_trait;
+use semver::Version;
+use std::path::PathBuf;
+use tempfile::NamedTempFile;
+use tracing::info;
+
 /// Type for upgrading an umbrella chart (openebs/openebs).
-#[derive(Clone, Debug)]
+#[derive(Debug)]
 pub struct UmbrellaUpgrader {
     pub(crate) chart_dir: PathBuf,
     pub(crate) release_name: String,
     pub(crate) client: HelmReleaseClient,
     pub(crate) helm_upgrade_extra_args: Vec<String>,
+    // This needs to be here for the helm upgrade commands to work.
+    #[allow(dead_code)]
+    pub(crate) temp_values_file: NamedTempFile,
     pub(crate) source_version: Version,
     pub(crate) target_version: Version,
 }

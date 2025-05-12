@@ -3,7 +3,7 @@ use crate::{
     error::{
         ByteVectorToString, DowngradeNotSupported, FailedHelmReleaseClientBuild,
         FailedToGetLocalChartVersion, InvalidChartStatus, InvalidChartVersion, InvalidHelmChart,
-        InvalidHelmVersion, MalformedHelmChartDir, ParseSemverVersion, Result,
+        InvalidHelmVersion, MalformedHelmChartDir, ParseSemverVersion, Result, TrimVOffFromVersion,
     },
     helm::{
         metadata::HelmChartMetadata, upgrade::upgrader::UmbrellaUpgrader,
@@ -11,15 +11,16 @@ use crate::{
     },
     utils::{check_path, exec_tokio_command, joined_flatten},
 };
+use upgrade::{
+    helm::{client::HelmReleaseClient, upgrade::HelmUpgrader},
+    upgrade_path::version_from_chart_yaml_file,
+};
+
 use semver::Version;
 use snafu::{ensure, ResultExt};
 use std::{fs::Metadata, path::PathBuf};
 use tokio::{spawn, try_join};
 use tracing::debug;
-use upgrade::{
-    helm::{client::HelmReleaseClient, upgrade::HelmUpgrader},
-    upgrade_path::version_from_chart_yaml_file,
-};
 
 /// Configuration for helm upgrade.
 #[derive(Clone, Debug)]
@@ -52,7 +53,7 @@ impl HelmUpgradeConfig {
         self.validate_inputs(chart_metadata.clone()).await?;
 
         let source_version = chart_metadata.version;
-        let target_version = version_from_chart_yaml_file(self.chart_dir.clone())
+        let target_version = version_from_chart_yaml_file(self.chart_dir.join("Chart.yaml"))
             .context(FailedToGetLocalChartVersion)?;
         if !self.skip_upgrade_path_validation {
             ensure!(
@@ -63,6 +64,10 @@ impl HelmUpgradeConfig {
                 }
             );
         }
+
+        let temp_values_file =
+            generate_values_file(self.chart_dir.as_path(), &source_version, &target_version)
+                .await?;
 
         Ok(UmbrellaUpgrader {
             chart_dir: self.chart_dir.clone(),
@@ -79,21 +84,7 @@ impl HelmUpgradeConfig {
                 self.helm_command_config
                     .args_set_file
                     .map(|val| ["--set-file".to_string(), val]),
-                Some(
-                    [
-                        "-f",
-                        generate_values_file(
-                            self.chart_dir.as_path(),
-                            &source_version,
-                            &target_version,
-                        )
-                        .await?
-                        .path()
-                        .to_str()
-                        .unwrap(),
-                    ]
-                    .map(ToString::to_string),
-                ),
+                Some(["-f", temp_values_file.path().to_str().unwrap()].map(ToString::to_string)),
                 Some(["--atomic", "--reset-then-reuse-values"].map(ToString::to_string)),
             ]
             .into_iter()
@@ -102,6 +93,7 @@ impl HelmUpgradeConfig {
             // Flatten the [String;2] into individual Strings.
             .flatten()
             .collect(),
+            temp_values_file,
             source_version,
             target_version,
         })
@@ -142,7 +134,13 @@ async fn check_helm_v3_14_in_path() -> Result<()> {
 
     let three_dot_fourteen = Version::new(3, 14, 0);
     let stdout = String::from_utf8(output.stdout).context(ByteVectorToString)?;
-    let helm_v = Version::parse(stdout.as_str()).context(ParseSemverVersion { version: stdout })?;
+    let helm_v = Version::parse(
+        stdout
+            .trim()
+            .strip_prefix('v')
+            .ok_or(TrimVOffFromVersion.build())?,
+    )
+    .context(ParseSemverVersion { version: stdout })?;
 
     /* This check passes for v3.15.0-rc.1, etc. This is fine because the --reset-then-reuse-values
      * option would be included in the build. The bar is at 3.14.0, even though v3.14.0-rc.1 could
@@ -192,7 +190,7 @@ async fn check_helm_release(chart_metadata: HelmChartMetadata) -> Result<()> {
 
 async fn check_helm_chart_dir(path: PathBuf) -> Result<()> {
     try_join!(
-        chart_is_valid(path.join("charts/crds")),
+        chart_is_valid(path.join("charts/openebs-crds")),
         chart_is_valid(path)
     )?;
 

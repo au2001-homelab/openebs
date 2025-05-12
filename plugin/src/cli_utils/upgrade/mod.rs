@@ -1,16 +1,21 @@
 use crate::{
-    cli_utils::upgrade::k8s::{
-        delete_older_upgrade_events, helm_release_name, list_events,
-        resources::{
-            config_map_data, job_set_file_args, upgrade_configmap, upgrade_job_cluster_role,
-            upgrade_job_cluster_role_binding, upgrade_job_service_account,
+    cli_utils::upgrade::{
+        helm_values::HelmRelease,
+        k8s::{
+            delete_older_upgrade_events, list_events,
+            resources::{
+                config_map_data, job_set_file_args, upgrade_configmap, upgrade_job_cluster_role,
+                upgrade_job_cluster_role_binding, upgrade_job_service_account,
+            },
+            upgrade_name_concat,
         },
-        upgrade_name_concat,
     },
     console_logger,
-    constants::{upgrade_obj_suffix, UPGRADE_JOB_IMAGE_REPO},
+    constants::{get_destination_version_tag, upgrade_obj_suffix, UPGRADE_JOB_IMAGE_REPO},
     upgrade_labels,
 };
+use upgrade::common::kube::client::{list_pods, paginated_list_metadata};
+
 use anyhow::{anyhow, Result};
 use cli::UpgradeCommonArgs;
 use k8s_openapi::{
@@ -18,8 +23,8 @@ use k8s_openapi::{
         batch::v1::{Job, JobSpec},
         core::v1::{
             ConfigMap, ConfigMapVolumeSource, Container, EnvVar, EnvVarSource, ExecAction,
-            ObjectFieldSelector, PodSpec, PodTemplateSpec, Probe, ServiceAccount, Volume,
-            VolumeMount,
+            ObjectFieldSelector, PersistentVolumeClaim, PodSpec, PodTemplateSpec, Probe,
+            ServiceAccount, Volume, VolumeMount,
         },
         events::v1::Event,
         rbac::v1::{ClusterRole, ClusterRoleBinding},
@@ -28,16 +33,20 @@ use k8s_openapi::{
     kind,
 };
 use kube::{
-    api::{Api, DeleteParams, PostParams},
+    api::{Api, DeleteParams, PartialObjectMeta, PostParams},
     client::Client,
     Error as kubeError, ResourceExt,
 };
+use openapi::{clients::tower::ApiClient, models::CordonDrainState};
+use openebs_upgrade::constants::HTTP_DATA_PAGE_SIZE;
+use semver::Version;
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
 use std::{collections::HashSet, env};
 use tokio::{spawn, task::JoinHandle, try_join};
-use upgrade::common::kube::client::list_pods;
+use utils::version_info;
 
 pub mod cli;
+mod helm_values;
 pub mod k8s;
 
 /// This type could be used to gather container image data from several sources and
@@ -123,7 +132,7 @@ async fn upgrade_job(
     let upgrade_image = format!(
         "{image_registry}/{UPGRADE_JOB_IMAGE_REPO}/openebs-upgrade-job:{image_tag}",
         image_registry = image_properties.registry,
-        image_tag = upgrade_obj_suffix()
+        image_tag = get_destination_version_tag()
     );
 
     let helm_args_set = args.set.join(",");
@@ -249,8 +258,9 @@ pub async fn get_latest_upgrade_event(
     )
     .await?
     .into_iter()
-    .find(|e| e.reason == Some("OpenebsUpgrade".to_string()))
-    .ok_or(anyhow!("No upgrade event present"))
+    .filter(|e| e.reason.as_deref() == Some("OpenebsUpgrade"))
+    .max_by_key(|e| e.event_time.clone())
+    .ok_or_else(|| anyhow!("No upgrade event present"))
 }
 
 /// This is used to deserialize the JSON data present in an upgrade-job event.
@@ -281,7 +291,232 @@ async fn handle_upgrade_event(
                 return Err(anyhow!("Note not present in upgrade event"));
             }
         } else {
-            console_logger::info("The upgrade has started\nYou can see the recent upgrade status using `get upgrade-status` command", None);
+            console_logger::info("The upgrade has started\nYou can see the recent upgrade status using `kubectl openebs upgrade status` command", None);
+        }
+    }
+
+    Ok(())
+}
+
+/// Log to user and error out if any rebuild in progress.
+async fn rebuild_in_progress_validation(client: &ApiClient) -> Result<()> {
+    if rebuild_in_progress(client).await? {
+        console_logger::error("Error", "The cluster is rebuilding replica of some volumes. To skip this validation please run after some time or re-run with '--skip-replica-rebuild` flag.");
+        return Err(anyhow!("Cluster is rebuilding replica of some volumes."));
+    }
+
+    Ok(())
+}
+
+/// Check for rebuild in progress.
+async fn rebuild_in_progress(client: &ApiClient) -> Result<bool> {
+    // The number of volumes to get per request.
+    let mut starting_token = Some(0_isize);
+
+    // The last paginated request will set the `starting_token` to `None`.
+    while starting_token.is_some() {
+        let vols = client
+            .volumes_api()
+            .get_volumes(HTTP_DATA_PAGE_SIZE as isize, None, starting_token)
+            .await
+            .map_err(|error| anyhow!("Failed to list Mayastor volumes: {error}"))?;
+        let volumes = vols.into_body();
+        starting_token = volumes.next_token;
+        for volume in volumes.entries {
+            if let Some(target) = &volume.state.target {
+                if target
+                    .children
+                    .iter()
+                    .any(|child| child.rebuild_progress.is_some())
+                {
+                    return Ok(true);
+                }
+            }
+        }
+    }
+    Ok(false)
+}
+
+/// Validate if the upgrade path is a sane one.
+async fn upgrade_path_validation(allow_unstable: bool, source_version: &Version) -> Result<()> {
+    let destination_version = get_destination_version_tag();
+
+    if destination_version.contains("develop") {
+        console_logger::error("Error", "Upgrade failed as destination version is unsupported. Please try with `--skip-upgrade-path-validation-for-unsupported-version.");
+        return Err(anyhow!(
+            "The upgrade path is invalid: destination version contains develop"
+        ));
+    }
+
+    let self_version_info = version_info!();
+    let mut self_version: Option<Version> = None;
+    if let Some(tag) = self_version_info.version_tag {
+        if !tag.is_empty() {
+            let tag = tag.strip_prefix('v').unwrap_or(&tag);
+            if let Ok(sv) = Version::parse(tag) {
+                self_version = Some(sv);
+            }
+        }
+    }
+
+    // Stable to unstable check.
+    if !allow_unstable {
+        let mut self_is_stable: bool = false;
+        if let Some(ref version) = self_version {
+            if version.pre.is_empty() {
+                self_is_stable = true;
+            }
+        }
+        if source_version.pre.is_empty() && !self_is_stable {
+            console_logger::error(
+                "Error",
+                "Cannot upgrade from a stable version to an unstable version.",
+            );
+            return Err(anyhow!(
+                "The upgrade path is invalid: stable to unstable upgrade version upgrade"
+            ));
+        }
+    }
+
+    // Upgrade not allowed to lower semver versions check.
+    if let Some(ref version) = self_version {
+        if version.lt(source_version) {
+            console_logger::error("Error", "Cannot upgrade from a higher version to a lower version. If this is intentional, try again with '--skip-upgrade-path-validation-for-unsupported-version'.");
+            return Err(anyhow!(
+                "The upgrade path is invalid: higher to lower version upgrade"
+            ));
+        }
+    }
+
+    Ok(())
+}
+
+pub(crate) async fn get_pvc_from_uuid(
+    uuid_list: HashSet<String>,
+    k8s_client: Client,
+) -> Result<Vec<String>> {
+    let mut pvc_list: Vec<PartialObjectMeta<PersistentVolumeClaim>> =
+        Vec::with_capacity(HTTP_DATA_PAGE_SIZE);
+    paginated_list_metadata(
+        Api::<PersistentVolumeClaim>::all(k8s_client),
+        &mut pvc_list,
+        None,
+    )
+    .await
+    .map_err(|error| anyhow!("Failed to list PVCs: {error}"))?;
+    let mut single_replica_volumes_pvc = Vec::with_capacity(HTTP_DATA_PAGE_SIZE);
+    for pvc in pvc_list {
+        if let Some(uuid) = pvc.metadata.uid {
+            if uuid_list.contains(&uuid) {
+                if let Some(pvc_name) = pvc.metadata.name {
+                    single_replica_volumes_pvc.push(pvc_name);
+                }
+            }
+        }
+    }
+    Ok(single_replica_volumes_pvc)
+}
+
+async fn single_volume_replica_validation(client: &ApiClient, k8s_client: Client) -> Result<()> {
+    // let mut single_replica_volumes = Vec::new();
+    // The number of volumes to get per request.
+    let mut starting_token = Some(0_isize);
+    let mut volumes = Vec::with_capacity(HTTP_DATA_PAGE_SIZE);
+
+    // The last paginated request will set the `starting_token` to `None`.
+    while starting_token.is_some() {
+        let vols = client
+            .volumes_api()
+            .get_volumes(HTTP_DATA_PAGE_SIZE as isize, None, starting_token)
+            .await
+            .map_err(|error| anyhow!("Failed to list Mayastor volumes: {error}"))?;
+
+        let v = vols.into_body();
+        let single_rep_vol_ids: Vec<String> = v
+            .entries
+            .into_iter()
+            .filter(|volume| volume.spec.num_replicas == 1)
+            .map(|volume| volume.spec.uuid.to_string())
+            .collect();
+        volumes.extend(single_rep_vol_ids);
+        starting_token = v.next_token;
+    }
+
+    if !volumes.is_empty() {
+        let pvc_list = get_pvc_from_uuid(HashSet::from_iter(volumes), k8s_client)
+            .await?
+            .join("\n");
+
+        let data = format!("The list below presents the single-replica volumes in the cluster. These single-replica volumes may not be accessible during upgrade. To skip this validation, please re-run with '--skip-single-replica-volume-validation` flag.\n{pvc_list}");
+        console_logger::error("Error", data.as_str());
+        return Err(anyhow!("Single replica volume present in cluster"));
+    }
+    Ok(())
+}
+
+/// Cordoned nodes logging to inform users of unavailable Mayastor nodes.
+async fn already_cordoned_nodes_validation(client: &ApiClient) -> Result<()> {
+    let mut cordoned_nodes_list = Vec::new();
+    let nodes = client
+        .nodes_api()
+        .get_nodes(None)
+        .await
+        .map_err(|error| anyhow!("Failed to list Mayastor Nodes: {error}"))?;
+    let nodelist = nodes.into_body();
+    for node in nodelist {
+        let node_spec = node.spec.ok_or(anyhow!("Node spec not present"))?;
+        if matches!(
+            node_spec.cordondrainstate,
+            Some(CordonDrainState::cordonedstate(_))
+        ) {
+            cordoned_nodes_list.push(node.id);
+        }
+    }
+    if !cordoned_nodes_list.is_empty() {
+        let data = format!("One or more nodes in this cluster are in a Mayastor cordoned state. This implies that the storage space of DiskPools on these nodes cannot be utilized for volume replica rebuilds. Please ensure remaining storage nodes have enough available DiskPool space to accommodate volume replica rebuilds, that get triggered during the upgrade process. To skip this validation, please re-run with '--skip-cordoned-node-validation` flag. Below is a list of the Mayastor cordoned nodes:\n{cordoned_nodes}", cordoned_nodes = &cordoned_nodes_list.join("\n"));
+        console_logger::error("Error", data.as_str());
+        return Err(anyhow!("Nodes are in cordoned state"));
+    }
+    Ok(())
+}
+
+/// Pre-upgrade safety checks to account for common usage errors and data unavailability.
+pub async fn upgrade_preflight_check(args: &UpgradeCommonArgs, release_name: &str) -> Result<()> {
+    let helm_release = HelmRelease::new_from_cluster(
+        args.helm_storage_driver.as_str(),
+        release_name,
+        args.namespace.as_str(),
+    )
+    .await?;
+
+    if helm_release.mayastor_is_enabled() {
+        console_logger::info("Volumes which make use of a single volume replica instance will be unavailable for some time during upgrade.", None);
+        console_logger::info("It is recommended that you do not create new volumes which make use of only one volume replica.", None);
+
+        let config = kube_proxy::ConfigBuilder::default_api_rest()
+            .with_kube_config(args.kubeconfig.clone())
+            .with_target_mod(|t| t.with_namespace(args.namespace.as_str()))
+            .build()
+            .await
+            .map_err(|error| anyhow!("Failed to create Mayastor REST client config: {error}"))?;
+
+        let rest_client = ApiClient::new(config);
+
+        if !args.skip_upgrade_path_validation_for_unsupported_version {
+            upgrade_path_validation(args.allow_unstable, helm_release.version()).await?;
+        }
+
+        if !args.skip_replica_rebuild {
+            rebuild_in_progress_validation(&rest_client).await?;
+        }
+
+        if !args.skip_cordoned_node_validation {
+            already_cordoned_nodes_validation(&rest_client).await?;
+        }
+
+        if !args.skip_single_replica_volume_validation {
+            let k8s_client = kube_proxy::client_from_kubeconfig(args.kubeconfig.clone()).await?;
+            single_volume_replica_validation(&rest_client, k8s_client).await?;
         }
     }
 
@@ -289,18 +524,12 @@ async fn handle_upgrade_event(
 }
 
 /// Start upgrade by creating an upgrade-job and such.
-pub async fn apply_upgrade(args: &UpgradeCommonArgs) -> Result<()> {
+pub async fn apply_upgrade(args: &UpgradeCommonArgs, release_name: &str) -> Result<()> {
     let k8s_client = kube_proxy::client_from_kubeconfig(args.kubeconfig.clone()).await?;
-    let release_name = match args.release_name.as_ref() {
-        Some(name) => name.clone(),
-        None => {
-            helm_release_name(args.namespace.as_str(), args.helm_storage_driver.as_str()).await?
-        }
-    };
 
     let upgrade_events_field_selector = format!(
-        "involvedObject.kind=Job,involvedObject.name={name}",
-        name = upgrade_name_concat(release_name.as_str(), "upgrade")
+        "regarding.kind=Job,regarding.name={name}",
+        name = upgrade_name_concat(release_name, "upgrade")
     );
 
     delete_older_upgrade_events(
@@ -309,7 +538,7 @@ pub async fn apply_upgrade(args: &UpgradeCommonArgs) -> Result<()> {
     )
     .await?;
 
-    create_upgrade_resources(args, release_name.as_str(), k8s_client.clone()).await?;
+    create_upgrade_resources(args, release_name, k8s_client.clone()).await?;
 
     for _ in 0..6 {
         // wait for 10 seconds for the upgrade event to be published
@@ -323,7 +552,7 @@ pub async fn apply_upgrade(args: &UpgradeCommonArgs) -> Result<()> {
             Ok(latest_event) => {
                 handle_upgrade_event(
                     latest_event,
-                    release_name.as_str(),
+                    release_name,
                     args.namespace.as_str(),
                     k8s_client,
                 )
@@ -373,7 +602,7 @@ pub async fn create_upgrade_resources(
 
     let cluster_role = upgrade_job_cluster_role(
         Some(args.namespace.clone()),
-        upgrade_name_concat(release_name, "upgrade-cluster-role"),
+        upgrade_name_concat(release_name, "upgrade-role"),
     );
     let cluster_role_client: Api<ClusterRole> = Api::all(k8s_client.clone());
 
@@ -459,7 +688,7 @@ pub async fn delete_upgrade_resources(
     );
 
     let cluster_role_client: Api<ClusterRole> = Api::all(k8s_client.clone());
-    let cluster_role_name = upgrade_name_concat(release_name, "upgrade-cluster-role");
+    let cluster_role_name = upgrade_name_concat(release_name, "upgrade-role");
 
     let cluster_role_binding_client: Api<ClusterRoleBinding> = Api::all(k8s_client.clone());
     let cluster_role_binding_name = format!(
