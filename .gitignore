@@ -28,3 +28,4 @@ result
 plugin/target/
 .rust-toolchain
 /rust-toolchain.toml
+/kubectl-openebs
