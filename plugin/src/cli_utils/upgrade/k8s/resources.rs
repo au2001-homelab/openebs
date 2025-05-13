@@ -160,7 +160,7 @@ pub(crate) fn upgrade_job_cluster_role(
             PolicyRule {
                 api_groups: Some(vec!["batch"].into_vec()),
                 resources: Some(vec!["cronjobs", "jobs"].into_vec()),
-                verbs: vec!["create", "list", "delete", "get", "patch"].into_vec(),
+                verbs: vec!["create", "list", "delete", "get", "patch", "watch"].into_vec(),
                 ..Default::default()
             },
             PolicyRule {
