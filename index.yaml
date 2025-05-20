@@ -68,9 +68,15 @@ entries:
         - name: csi-node-driver-registrar
           image: registry.k8s.io/sig-storage/csi-node-driver-registrar:v2.10.0
         - name: csi-node-driver-registrar
+          image: registry.k8s.io/sig-storage/csi-node-driver-registrar:v2.13.0
+        - name: csi-node-driver-registrar
           image: registry.k8s.io/sig-storage/csi-node-driver-registrar:v2.8.0
         - name: csi-provisioner
           image: registry.k8s.io/sig-storage/csi-provisioner:v3.5.0
+        - name: csi-provisioner
+          image: registry.k8s.io/sig-storage/csi-provisioner:v5.2.0
+        - name: csi-resizer
+          image: registry.k8s.io/sig-storage/csi-resizer:v1.11.2
         - name: csi-resizer
           image: registry.k8s.io/sig-storage/csi-resizer:v1.8.0
         - name: csi-resizer
@@ -79,13 +85,17 @@ entries:
           image: registry.k8s.io/sig-storage/csi-snapshotter:v6.2.2
         - name: csi-snapshotter
           image: registry.k8s.io/sig-storage/csi-snapshotter:v6.3.3
+        - name: csi-snapshotter
+          image: registry.k8s.io/sig-storage/csi-snapshotter:v7.0.0
         - name: snapshot-controller
           image: registry.k8s.io/sig-storage/snapshot-controller:v6.2.2
         - name: snapshot-controller
           image: registry.k8s.io/sig-storage/snapshot-controller:v6.3.3
+        - name: snapshot-controller
+          image: registry.k8s.io/sig-storage/snapshot-controller:v7.0.0
     apiVersion: v2
     appVersion: 4.3.0-develop
-    created: "2025-05-15T10:25:36.318093303Z"
+    created: "2025-05-20T17:39:24.133676524Z"
     dependencies:
     - name: openebs-crds
       repository: ""
@@ -114,7 +124,7 @@ entries:
       repository: https://openebs.github.io/mayastor-extensions
       version: 0.0.0
     description: Containerized Attached Storage for Kubernetes
-    digest: b06306fca2c031659d2e03e382ba983dda5992406ed6ba184ca0a57cc66d76bb
+    digest: 37eed24d651e563c03c713d99d5559c8eec862ffdb95fd5bcb9b3325d52dae2e
     home: https://www.openebs.io/
     icon: https://raw.githubusercontent.com/cncf/artwork/HEAD/projects/openebs/icon/color/openebs-icon-color.png
     keywords:
@@ -477,4 +487,4 @@ entries:
     urls:
     - https://github.com/openebs/openebs/releases/download/openebs-4.0.0/openebs-4.0.0.tgz
     version: 4.0.0
-generated: "2025-05-15T10:25:36.277305494Z"
+generated: "2025-05-20T17:39:24.089482113Z"
