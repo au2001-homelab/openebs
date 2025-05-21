@@ -14,3 +14,5 @@ pub const PARTIAL_REBUILD_DISABLE_EXTENTS: (Version, Version) =
 pub const HTTP_DATA_PAGE_SIZE: usize = 500;
 /// Version instance for release 4.0.0.
 pub const FOUR_DOT_O: Version = Version::new(4, 0, 0);
+pub const THREE_DOT_FOUR_DOT_ONE: Version = Version::new(3, 4, 1);
+pub const FOUR_DOT_THREE: Version = Version::new(4, 3, 0);

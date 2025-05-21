@@ -1,7 +1,11 @@
-use upgrade::helm::{
-    chart::{HelmValuesCollection, UmbrellaValues},
-    client::HelmReleaseClient,
-    upgrade::{HelmUpgradeRunner, HelmUpgrader},
+use crate::constants::{FOUR_DOT_THREE, THREE_DOT_FOUR_DOT_ONE};
+use upgrade::{
+    common::kube::client::delete_loki_sts,
+    helm::{
+        chart::{HelmValuesCollection, UmbrellaValues},
+        client::HelmReleaseClient,
+        upgrade::{HelmUpgradeRunner, HelmUpgrader},
+    },
 };
 
 use async_trait::async_trait;
@@ -15,6 +19,7 @@ use tracing::info;
 pub struct UmbrellaUpgrader {
     pub(crate) chart_dir: PathBuf,
     pub(crate) release_name: String,
+    pub(crate) namespace: String,
     pub(crate) client: HelmReleaseClient,
     pub(crate) helm_upgrade_extra_args: Vec<String>,
     // This needs to be here for the helm upgrade commands to work.
@@ -46,6 +51,13 @@ impl HelmUpgrader for UmbrellaUpgrader {
 
         // Returning HelmUpgradeRunner.
         Ok(Box::pin(async move {
+            // Handle move from mayastor loki-stack to umbrella loki chart.
+            if self.source_version.ge(&THREE_DOT_FOUR_DOT_ONE)
+                && self.source_version.lt(&FOUR_DOT_THREE)
+            {
+                delete_loki_sts(self.release_name.clone(), self.namespace.clone()).await?
+            }
+
             info!("Starting helm upgrade...");
             self.client
                 .upgrade(

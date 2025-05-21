@@ -72,6 +72,7 @@ impl HelmUpgradeConfig {
         Ok(UmbrellaUpgrader {
             chart_dir: self.chart_dir.clone(),
             release_name: self.release_name,
+            namespace: self.namespace.clone(),
             client: HelmReleaseClient::builder()
                 .with_namespace(self.namespace)
                 .with_storage_driver(self.helm_command_config.storage_driver)
