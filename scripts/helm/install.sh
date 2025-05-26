@@ -146,6 +146,9 @@ hostpath_args() {
 loki_args() {
   echo -n "$(openebs_set_args "loki.loki.commonConfig.replication_factor=2,loki.singleBinary.replicas=2,loki.minio.replicas=2")"
 }
+nats_args() {
+  echo -n "$(openebs_set_args "mayastor.nats.cluster.enabled=false,mayastor.nats.cluster.replicas=1")"
+}
 
 helm_installed() {
   if ! helm ls &>/dev/null; then
@@ -173,6 +176,7 @@ helm_install() {
         $(lvm_args) \
         $(zfs_args) \
         $(hostpath_args) \
+        $(nats_args) \
         $(loki_args)" \
         | xargs)
   if [ -z "$DRY_RUN" ] && [ "$action" != "template" ]; then
