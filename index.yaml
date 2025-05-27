@@ -64,38 +64,26 @@ entries:
         - name: prometheus-config-reloader
           image: quay.io/prometheus-operator/prometheus-config-reloader:v0.81.0
         - name: csi-attacher
-          image: registry.k8s.io/sig-storage/csi-attacher:v4.3.0
-        - name: csi-node-driver-registrar
-          image: registry.k8s.io/sig-storage/csi-node-driver-registrar:v2.10.0
+          image: registry.k8s.io/sig-storage/csi-attacher:v4.8.1
         - name: csi-node-driver-registrar
           image: registry.k8s.io/sig-storage/csi-node-driver-registrar:v2.13.0
-        - name: csi-node-driver-registrar
-          image: registry.k8s.io/sig-storage/csi-node-driver-registrar:v2.8.0
-        - name: csi-provisioner
-          image: registry.k8s.io/sig-storage/csi-provisioner:v3.5.0
         - name: csi-provisioner
           image: registry.k8s.io/sig-storage/csi-provisioner:v5.2.0
         - name: csi-resizer
           image: registry.k8s.io/sig-storage/csi-resizer:v1.11.2
         - name: csi-resizer
-          image: registry.k8s.io/sig-storage/csi-resizer:v1.8.0
-        - name: csi-resizer
-          image: registry.k8s.io/sig-storage/csi-resizer:v1.9.3
-        - name: csi-snapshotter
-          image: registry.k8s.io/sig-storage/csi-snapshotter:v6.2.2
-        - name: csi-snapshotter
-          image: registry.k8s.io/sig-storage/csi-snapshotter:v6.3.3
+          image: registry.k8s.io/sig-storage/csi-resizer:v1.13.2
         - name: csi-snapshotter
           image: registry.k8s.io/sig-storage/csi-snapshotter:v7.0.0
-        - name: snapshot-controller
-          image: registry.k8s.io/sig-storage/snapshot-controller:v6.2.2
-        - name: snapshot-controller
-          image: registry.k8s.io/sig-storage/snapshot-controller:v6.3.3
+        - name: csi-snapshotter
+          image: registry.k8s.io/sig-storage/csi-snapshotter:v8.2.0
         - name: snapshot-controller
           image: registry.k8s.io/sig-storage/snapshot-controller:v7.0.0
+        - name: snapshot-controller
+          image: registry.k8s.io/sig-storage/snapshot-controller:v8.2.0
     apiVersion: v2
     appVersion: 4.3.0-develop
-    created: "2025-05-21T19:06:00.191843753Z"
+    created: "2025-05-27T06:04:46.78523821Z"
     dependencies:
     - name: openebs-crds
       repository: ""
@@ -124,7 +112,7 @@ entries:
       repository: https://openebs.github.io/mayastor-extensions
       version: 0.0.0
     description: Containerized Attached Storage for Kubernetes
-    digest: 9fa3ae2a76f221d9d438f7157af8876332e1f9c0915b8d68b039bb2b4aca744c
+    digest: ef4248386e50817487f1e699493929f976f20e56eabfb8a6fbe14831ef1446c5
     home: https://www.openebs.io/
     icon: https://raw.githubusercontent.com/cncf/artwork/HEAD/projects/openebs/icon/color/openebs-icon-color.png
     keywords:
@@ -487,4 +475,4 @@ entries:
     urls:
     - https://github.com/openebs/openebs/releases/download/openebs-4.0.0/openebs-4.0.0.tgz
     version: 4.0.0
-generated: "2025-05-21T19:06:00.149376444Z"
+generated: "2025-05-27T06:04:46.742694017Z"
