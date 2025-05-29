@@ -122,7 +122,7 @@ jobs:
 
       - name: Create Pull Request to release
         id: cpr
-        uses: peter-evans/create-pull-request@v5
+        uses: peter-evans/create-pull-request@v7
         with:
           base: ${{ github.event.inputs.branch}}
           commit-message: "chore(ci): update helm chart versions and/or git submodules"
@@ -134,5 +134,5 @@ jobs:
             kind/ci
           draft: false
           signoff: true
-          branch: "create-pull-request/patch-${{ github.event.inputs.branch}}"
-          token: ${{ secrets.GITHUB_TOKEN }}
+          branch: "prepare-${{ github.event.inputs.branch}}"
+          token: ${{ secrets.ORG_CI_GITHUB }}
