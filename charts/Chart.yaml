@@ -52,9 +52,9 @@ annotations:
     - name: loki
       image: docker.io/grafana/loki:3.4.2
     - name: alpine-bash
-      image: docker.io/openebs/alpine-bash:4.1.0
+      image: docker.io/openebs/alpine-bash:4.2.0
     - name: alpine-sh
-      image: docker.io/openebs/alpine-sh:4.1.0
+      image: docker.io/openebs/alpine-sh:4.2.0
     - name: mayastor-agent-core
       image: docker.io/openebs/mayastor-agent-core:develop
     - name: mayastor-agent-ha-cluster
@@ -89,10 +89,12 @@ annotations:
       image: natsio/prometheus-nats-exporter:0.11.0
     - name: linux-utils
       image: openebs/linux-utils:4.1.0
+    - name: linux-utils
+      image: openebs/linux-utils:4.2.0
     - name: lvm-driver
       image: openebs/lvm-driver:1.7.0-develop
     - name: provisioner-localpv
-      image: openebs/provisioner-localpv:4.2.0
+      image: openebs/provisioner-localpv:4.3.0
     - name: provisioner-localpv
       image: openebs/provisioner-localpv:4.3.0-develop
     - name: zfs-driver

@@ -2,8 +2,8 @@ docker.io/bitnami/etcd:3.5.6-debian-11-r10
 docker.io/bitnami/kubectl:1.25.15
 docker.io/grafana/alloy:v1.8.1
 docker.io/grafana/loki:3.4.2
-docker.io/openebs/alpine-bash:4.1.0
-docker.io/openebs/alpine-sh:4.1.0
+docker.io/openebs/alpine-bash:4.2.0
+docker.io/openebs/alpine-sh:4.2.0
 docker.io/openebs/mayastor-agent-core:develop
 docker.io/openebs/mayastor-agent-ha-cluster:develop
 docker.io/openebs/mayastor-agent-ha-node:develop
@@ -21,8 +21,9 @@ natsio/nats-box:0.13.8
 natsio/nats-server-config-reloader:0.10.1
 natsio/prometheus-nats-exporter:0.11.0
 openebs/linux-utils:4.1.0
+openebs/linux-utils:4.2.0
 openebs/lvm-driver:1.7.0-develop
-openebs/provisioner-localpv:4.2.0
+openebs/provisioner-localpv:4.3.0
 openebs/provisioner-localpv:4.3.0-develop
 openebs/zfs-driver:2.8.0-develop
 quay.io/minio/mc:RELEASE.2024-11-21T17-21-54Z
