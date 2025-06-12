@@ -5,9 +5,10 @@ authors:
   - "@Johnaius"
 owners:
   - "@Johnaius"
+  - "@tiagolobocastro"
 editor: TBD
-creation-date: 02/6/2025
-last-updated: 02/6/2025
+creation-date: 6/2/2025
+last-updated: 12/6/2025
 status: implementable
 ---
 
@@ -15,26 +16,25 @@ status: implementable
 
 ## Table of Contents
 
-* [Summary](#summary)
-* [Motivation](#motivation)
-  * [Goals](#goals)
-  * [Non-Goals](#non-goals)
-* [Proposal](#proposal)
-  * [User Stories](#user-stories)
-    * [Story 1](#story-1)
-    * [Story 2](#story-2)
-  * [Implementation Details/Notes/Constraints](#implementation-detailsnotesconstraints)
-    * [Discoverable images](#discoverable-images)
-      * [Regex Explanation](#regex-explanation)
-    * [Expose Images](#expose-images)
-    * [Non-Discoverable/Runtime images](#non-discoverableruntime-images)
-  * [Test Plan](#test-plan)
-  * [Risks and Mitigations](#risks-and-mitigations)
-    * [Mitigations](#mitigations)
-* [Graduation Criteria](#graduation-criteria)
-* [Implementation History](#implementation-history)
-* [Drawbacks [optional]](#drawbacks-optional)
-* [Alternatives [optional]](#alternatives-optional)
+- [Summary](#summary)
+- [Motivation](#motivation)
+  - [Goals](#goals)
+- [Proposal](#proposal)
+  - [User Stories](#user-stories)
+    - [Story 1](#story-1)
+    - [Story 2](#story-2)
+  - [Implementation Details/Notes/Constraints](#implementation-detailsnotesconstraints)
+    - [Cert Manager](#cert-manager)
+    - [Certificate Flow](#certificate-flow)
+      - [Example of certificate deployment with cert-manager](#example-of-certificate-deployment-with-cert-manager)
+    - [HTTP as default](#http-as-default)
+    - [REST](#rest)
+    - [gRPC](#grpc)
+    - [etcd](#etcd)
+  - [Test Plan](#test-plan)
+  - [Risks and Mitigations](#risks-and-mitigations)
+    - [Mitigations](#mitigations)
+- [Graduation Criteria](#graduation-criteria)
 
 ## Summary
 
@@ -56,7 +56,7 @@ Security
     * will need help identifying how to secure comms with etcd.
 
 1. Update Mayastor components to use the generated certificates
-![Diagram](./images/flowofmayastor.png)
+![Diagram](./images/tlsflow.png)
 
 ## Proposal
 
@@ -179,7 +179,7 @@ Will need direction on how to implement tls between etcd and it's communication 
 
 ### Test Plan
 
-We should validate the communications are secure, ensuring they are and that certicates can be rotated safely.  Would like to discuss actual implementation of tests for these changes.
+We should validate the communications are secure, ensuring they are and that certificates can be rotated safely.  Would like to discuss actual implementation of tests for these changes.
 
 ### Risks and Mitigations
 
