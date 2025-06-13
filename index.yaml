@@ -590,49 +590,27 @@ entries:
         - name: alpine-sh
           image: docker.io/openebs/alpine-sh:4.2.0
         - name: mayastor-agent-core
-          image: docker.io/openebs/mayastor-agent-core:release-2.9
-        - name: mayastor-agent-core
-          image: docker.io/openebs/mayastor-agent-core:v2.9.0-rc.0
+          image: docker.io/openebs/mayastor-agent-core:v2.9.0
         - name: mayastor-agent-ha-cluster
-          image: docker.io/openebs/mayastor-agent-ha-cluster:release-2.9
-        - name: mayastor-agent-ha-cluster
-          image: docker.io/openebs/mayastor-agent-ha-cluster:v2.9.0-rc.0
+          image: docker.io/openebs/mayastor-agent-ha-cluster:v2.9.0
         - name: mayastor-agent-ha-node
-          image: docker.io/openebs/mayastor-agent-ha-node:release-2.9
-        - name: mayastor-agent-ha-node
-          image: docker.io/openebs/mayastor-agent-ha-node:v2.9.0-rc.0
+          image: docker.io/openebs/mayastor-agent-ha-node:v2.9.0
         - name: mayastor-api-rest
-          image: docker.io/openebs/mayastor-api-rest:release-2.9
-        - name: mayastor-api-rest
-          image: docker.io/openebs/mayastor-api-rest:v2.9.0-rc.0
+          image: docker.io/openebs/mayastor-api-rest:v2.9.0
         - name: mayastor-csi-controller
-          image: docker.io/openebs/mayastor-csi-controller:release-2.9
-        - name: mayastor-csi-controller
-          image: docker.io/openebs/mayastor-csi-controller:v2.9.0-rc.0
+          image: docker.io/openebs/mayastor-csi-controller:v2.9.0
         - name: mayastor-csi-node
-          image: docker.io/openebs/mayastor-csi-node:release-2.9
-        - name: mayastor-csi-node
-          image: docker.io/openebs/mayastor-csi-node:v2.9.0-rc.0
+          image: docker.io/openebs/mayastor-csi-node:v2.9.0
         - name: mayastor-io-engine
-          image: docker.io/openebs/mayastor-io-engine:release-2.9
-        - name: mayastor-io-engine
-          image: docker.io/openebs/mayastor-io-engine:v2.9.0-rc.0
+          image: docker.io/openebs/mayastor-io-engine:v2.9.0
         - name: mayastor-metrics-exporter-io-engine
-          image: docker.io/openebs/mayastor-metrics-exporter-io-engine:release-2.9
-        - name: mayastor-metrics-exporter-io-engine
-          image: docker.io/openebs/mayastor-metrics-exporter-io-engine:v2.9.0-rc.0
+          image: docker.io/openebs/mayastor-metrics-exporter-io-engine:v2.9.0
         - name: mayastor-obs-callhome-stats
-          image: docker.io/openebs/mayastor-obs-callhome-stats:release-2.9
-        - name: mayastor-obs-callhome-stats
-          image: docker.io/openebs/mayastor-obs-callhome-stats:v2.9.0-rc.0
+          image: docker.io/openebs/mayastor-obs-callhome-stats:v2.9.0
         - name: mayastor-obs-callhome
-          image: docker.io/openebs/mayastor-obs-callhome:release-2.9
-        - name: mayastor-obs-callhome
-          image: docker.io/openebs/mayastor-obs-callhome:v2.9.0-rc.0
+          image: docker.io/openebs/mayastor-obs-callhome:v2.9.0
         - name: mayastor-operator-diskpool
-          image: docker.io/openebs/mayastor-operator-diskpool:release-2.9
-        - name: mayastor-operator-diskpool
-          image: docker.io/openebs/mayastor-operator-diskpool:v2.9.0-rc.0
+          image: docker.io/openebs/mayastor-operator-diskpool:v2.9.0
         - name: k8s-sidecar
           image: kiwigrid/k8s-sidecar:1.30.2
         - name: nats
@@ -679,7 +657,7 @@ entries:
           image: registry.k8s.io/sig-storage/snapshot-controller:v8.2.0
     apiVersion: v2
     appVersion: 4.3.0-prerelease
-    created: "2025-06-03T21:26:32.13998911Z"
+    created: "2025-06-13T15:00:06.732538492Z"
     dependencies:
     - name: openebs-crds
       repository: ""
@@ -706,9 +684,9 @@ entries:
     - condition: engines.replicated.mayastor.enabled
       name: mayastor
       repository: https://openebs.github.io/mayastor-extensions
-      version: 2.9.0-rc.0
+      version: 2.9.0
     description: Containerized Attached Storage for Kubernetes
-    digest: fbb455118be3023bff10d900d21edc8a02e5b8ef37ef488ea5abbe841f2916c5
+    digest: d979b8c972cf3ef99c695e9c05de1087da6614fa8a7749166e39bc8732d3f169
     home: https://www.openebs.io/
     icon: https://raw.githubusercontent.com/cncf/artwork/HEAD/projects/openebs/icon/color/openebs-icon-color.png
     keywords:
@@ -1200,4 +1178,4 @@ entries:
     urls:
     - https://github.com/openebs/openebs/releases/download/openebs-4.0.0/openebs-4.0.0.tgz
     version: 4.0.0
-generated: "2025-06-13T11:58:33.693247516Z"
+generated: "2025-06-13T15:00:06.689381405Z"
