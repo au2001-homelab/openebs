@@ -7,8 +7,8 @@ owners:
   - "@tiagolobocastro"
 editor: TBD
 creation-date: 28/02/2025
-last-updated: 28/02/2025
-status: provisional
+last-updated: 19/06/2025
+status: implementable
 ---
 
 # Cordon Mayastor Pools
@@ -47,6 +47,14 @@ Add a new resource (pool) to the existing cordon and uncordon kubectl-mayastor p
 2. kubectl-mayastor uncordon pool xxxx
 
 These new commands should follow the same logic of the node resource.
+Similar to the node cordon, you may add multiple cordon labels if different "actors" need the pool to be cordoned. Only when the last label is removed,
+is the pool uncordoned.
+
+### Special Labels
+
+When cordoning we may give the pool additional cordon labels, which could extend the cordoning behaviour.
+For example, we may not want to attempt pool import should the io-engine restart. In this case a special label, i.e. `openebs.io/no-import` could
+be used to specify this behaviour.
 
 ### User Stories
 
@@ -106,19 +114,123 @@ As such we're proposing that the CR reflects only the cordon state of the pool, 
 
 #### Internal gRPC
 
-TODO
+Add cordon handlers to the [PoolGrpc](https://github.com/openebs/mayastor-control-plane/blob/2fee47f970bc73c4e5ddb83a1b390d5ab7074b4b/control-plane/grpc/proto/v1/pool/pool.proto#L175).
+Example:
+
+```protobuf
+// Existing Node Cordon labels aren't like K8s labels, they may allow for different
+// values for the same key, ie only the entire value is considered.
+message LabelValues {
+  repeated string values = 1;
+}
+message CordonPoolRequest {
+  optional string node_id = 1;
+  string pool_id = 2;
+  map<string, LabelValues> labels = 3;
+}
+message CordonPoolReply {
+  oneof reply {
+    Pool pool = 1;
+    common.ReplyError error = 2;
+  }
+}
+
+service PoolGrpc {
+    rpc CordonPool (CordonPoolRequest) returns (CordonPoolReply) {}
+    rpc UncordonPool (CordonPoolRequest) returns (CordonPoolReply) {}
+}
+```
 
 #### Public OpenAPI
 
-TODO
+```openapi
+  '/pools/{pool_id}/cordon/{key}={value}':
+    put:
+      tags:
+        - Pools
+      operationId: put_pool_cordon
+      parameters:
+        - in: path
+          name: pool_id
+          required: true
+          schema:
+            type: string
+        - in: path
+          name: key
+          required: true
+          schema:
+            type: string
+          x-actix-tail-match: true
+          description: The key of the label to be added.
+        - in: path
+          name: value
+          required: true
+          schema:
+            type: string
+          x-actix-tail-match: true
+          description: The value of the label to be added.
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Pool'
+        '4XX':
+          $ref: '#/components/responses/ClientError'
+        '5XX':
+          $ref: '#/components/responses/ServerError'
+      security:
+        - JWT: [ ]
+    delete:
+      tags:
+        - Pools
+      operationId: del_pool_cordon
+      parameters:
+        - in: path
+          name: pool_id
+          required: true
+          schema:
+            type: string
+        - in: path
+          name: key
+          required: true
+          schema:
+            type: string
+          x-actix-tail-match: true
+          description: The key of the label to be removed.
+        - in: path
+          name: value
+          required: false
+          schema:
+            type: string
+          x-actix-tail-match: true
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Pool'
+        '4XX':
+          $ref: '#/components/responses/ClientError'
+        '5XX':
+          $ref: '#/components/responses/ServerError'
+      security:
+        - JWT: [ ]
+```
 
 #### Kubectl Plugin
 
-TODO
+Add new subcommands to cordon with the pool resource.
 
 ### Test Plan
 
-TODO
+In order to test this feature we need a scenario where we'd make use the pool which we are cordoning.
+If there are multiple options available, what if the scheduler always picks the other pools and we never exercise the cordoning logic for example.
+
+Other than this scenario, there's probably nothing specific we need to test around this, other than
+ensuring the cordon and uncordon operations are in fact working and affect the scheduling.
 
 ### Risks and Mitigations
 
