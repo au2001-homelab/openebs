@@ -4,7 +4,7 @@ entries:
   - annotations:
       helm.sh/images: |
         - name: etcd
-          image: docker.io/bitnami/etcd:3.5.6-debian-11-r10
+          image: docker.io/bitnami/etcd:3.6.2-debian-12-r0
         - name: kubectl
           image: docker.io/bitnami/kubectl:1.25.15
         - name: alloy
@@ -37,6 +37,8 @@ entries:
           image: docker.io/openebs/mayastor-obs-callhome:develop
         - name: mayastor-operator-diskpool
           image: docker.io/openebs/mayastor-operator-diskpool:develop
+        - name: rawfile-localpv
+          image: docker.io/openebs/rawfile-localpv:v0.11.0
         - name: k8s-sidecar
           image: kiwigrid/k8s-sidecar:1.30.2
         - name: nats
@@ -77,13 +79,17 @@ entries:
           image: registry.k8s.io/sig-storage/csi-snapshotter:v7.0.0
         - name: csi-snapshotter
           image: registry.k8s.io/sig-storage/csi-snapshotter:v8.2.0
+        - name: csi-snapshotter
+          image: registry.k8s.io/sig-storage/csi-snapshotter:v8.2.1
         - name: snapshot-controller
           image: registry.k8s.io/sig-storage/snapshot-controller:v7.0.0
         - name: snapshot-controller
           image: registry.k8s.io/sig-storage/snapshot-controller:v8.2.0
+        - name: snapshot-controller
+          image: registry.k8s.io/sig-storage/snapshot-controller:v8.2.1
     apiVersion: v2
     appVersion: 4.4.0-develop
-    created: "2025-07-07T17:41:02.050325488Z"
+    created: "2025-07-24T08:19:36.305537949Z"
     dependencies:
     - name: openebs-crds
       repository: ""
@@ -107,12 +113,16 @@ entries:
       name: lvm-localpv
       repository: https://openebs.github.io/lvm-localpv
       version: 1.8.0-develop
+    - condition: engines.local.rawfile.enabled
+      name: rawfile-localpv
+      repository: https://openebs.github.io/rawfile-localpv
+      version: 0.11.0
     - condition: engines.replicated.mayastor.enabled
       name: mayastor
       repository: https://openebs.github.io/mayastor-extensions
       version: 0.0.0
     description: Containerized Attached Storage for Kubernetes
-    digest: db0fce38b405b6a9802e7f00f01a66993018a9e2f9674355fc4e0da0da61cfe7
+    digest: a3e54b4ac1766439727249ad1044eac9d928aff976d3a93837432f92784c1abf
     home: https://www.openebs.io/
     icon: https://raw.githubusercontent.com/cncf/artwork/HEAD/projects/openebs/icon/color/openebs-icon-color.png
     keywords:
@@ -1555,4 +1565,4 @@ entries:
     urls:
     - https://github.com/openebs/openebs/releases/download/openebs-4.0.0/openebs-4.0.0.tgz
     version: 4.0.0
-generated: "2025-07-07T17:41:02.008952235Z"
+generated: "2025-07-24T08:19:36.257951534Z"
