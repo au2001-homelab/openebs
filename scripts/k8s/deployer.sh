@@ -23,6 +23,7 @@ SETUP_MAYASTOR="false"
 CLEANUP="false"
 LABEL=
 IPFAM="ipv4"
+USE_DOCKER_CFG="true"
 SUDO=${SUDO:-"sudo"}
 
 help() {
@@ -43,6 +44,7 @@ Options:
   --label                           Label worker nodes with the io-engine selector.
   --cleanup                         Prior to starting, stops the running instance of the deployer.
   --ip-family     <str>             KIND has support for IPv4, IPv6 and dual-stack clusters, with the default being ipv4.
+  --no-login                        Don't use the docker config json file.
 
 Command:
   start                             Start the k8s cluster.
@@ -139,6 +141,9 @@ while [ "$#" -gt 0 ]; do
               ;;
           esac
           ;;
+        --no-login)
+          USE_DOCKER_CFG="false"
+          shift;;
         --dry-run)
           if [ -z "$DRY_RUN" ]; then
             DRY_RUN="--dry-run"
@@ -225,6 +230,13 @@ for node_index in $(seq 1 $WORKERS); do
       containerPath: /host
       propagation: HostToContainer
 EOF
+  DOCKER_CONFIG="$HOME/.docker/config.json"
+  if [ "$USE_DOCKER_CFG" = "true" ] && [ -f "$DOCKER_CONFIG" ]; then
+    cat <<EOF >> "$TMP_KIND_CONFIG"
+    - hostPath: $DOCKER_CONFIG
+      containerPath: /var/lib/kubelet/config.json
+EOF
+  fi
   if [ "$SETUP_ZFS" = "true" ]; then
     # Should already be installed by prereq script
     ZFS=$(realpath $(which zfs))
