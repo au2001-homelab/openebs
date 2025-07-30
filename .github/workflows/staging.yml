@@ -16,7 +16,8 @@ jobs:
     uses: ./.github/workflows/images.yml
     with:
       tag: ${{ inputs.tag }}
-      namespace: ghcr.io/${{ github.repository_owner }}/dev
+      registry: ghcr.io
+      namespace: ${{ github.repository_owner }}/dev
     secrets: inherit
 
   build-binaries:

@@ -19,18 +19,18 @@ for name in $DEFAULT_IMAGES; do
   IMAGES+=("${image##*/}")
 done
 
-SOURCE_NAMESPACE=""
-TARGET_NAMESPACE=""
+SOURCE=""
+TARGET=""
 TAG=""
 
 while [[ $# -gt 0 ]]; do
   case $1 in
-    --source-namespace)
-      SOURCE_NAMESPACE="$2"
+    --source)
+      SOURCE="$2"
       shift 2
       ;;
-    --target-namespace)
-      TARGET_NAMESPACE="$2"
+    --target)
+      TARGET="$2"
       shift 2
       ;;
     --tag)
@@ -43,17 +43,17 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
-if [[ -z "$SOURCE_NAMESPACE" ]] || [[ -z "$TARGET_NAMESPACE" ]] || [[ -z "$TAG" ]]; then
-  log_fatal "Usage: $0 --source-namespace <source> --target-namespace <target> --tag <tag>"
+if [[ -z "$SOURCE" ]] || [[ -z "$TARGET" ]] || [[ -z "$TAG" ]]; then
+  log_fatal "Usage: $0 --source <source> --target <target> --tag <tag>"
 fi
 
-echo "Mirroring images from ${SOURCE_NAMESPACE} to ${TARGET_NAMESPACE} with tag ${TAG}"
+echo "Mirroring images from ${SOURCE} to ${TARGET} with tag ${TAG}"
 
 for IMAGE in "${IMAGES[@]}"; do
   echo "Mirroring ${IMAGE}:${TAG}..."
 
-  SRC="${SOURCE_NAMESPACE}/${IMAGE}:${TAG}"
-  DEST="${TARGET_NAMESPACE}/${IMAGE}:${TAG}"
+  SRC="${SOURCE}/${IMAGE}:${TAG}"
+  DEST="${TARGET}/${IMAGE}:${TAG}"
   crane copy --platform all "${SRC}" "${DEST}"
 
   echo "✓ Successfully mirrored ${IMAGE}:${TAG}"

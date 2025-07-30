@@ -37,8 +37,8 @@ jobs:
       - name: Mirror images from dev to Docker Hub
         run: |
           nix-shell --pure --run "./scripts/staging/mirror-images.sh \
-            --source-namespace ghcr.io/${{ github.repository_owner }}/dev \
-            --target-namespace docker.io/${{ github.repository_owner }} \
+            --source ghcr.io/${{ github.repository_owner }}/dev \
+            --target docker.io/${{ github.repository_owner }} \
             --tag ${{ github.ref_name }}" ./scripts/staging/shell.nix
 
   release-kubectl-binaries:

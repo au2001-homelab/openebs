@@ -10,8 +10,12 @@ on:
         description: 'Tag to build, example: v4.2.0'
         required: true
         type: string
+      registry:
+        description: 'Registry, example: ghcr.io'
+        required: true
+        type: string
       namespace:
-        description: 'Namespace, example: ghcr.io/openebs/dev'
+        description: 'Namespace, example: openebs/dev'
         required: true
         type: string
 
@@ -59,7 +63,7 @@ jobs:
         run: |
           if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
             nix-shell --pure --run "./scripts/helm/update-version-upon-release.sh"
-            nix-shell --run "./scripts/release.sh --tag ${{ inputs.tag }} --registry ${{ inputs.namespace }}"
+            nix-shell --run "./scripts/release.sh --tag ${{ inputs.tag }} --registry ${{ inputs.registry }}/${{ inputs.namespace }}"
           elif [[ "${{ github.event_name }}" == "push" ]]; then
             TAG=$(nix-shell --run "yq '.appVersion' charts/Chart.yaml")
             nix-shell --run "./scripts/release.sh --tag v${TAG}"
