@@ -33,20 +33,6 @@ jobs:
           fetch-depth: 0
 
       - uses: cachix/install-nix-action@v31.3.0
-        with:
-          github_access_token: ''
-
-      - name: Inject github token to nix config
-        run: |
-          cat <<EOF | sudo tee -a /etc/nix/nix.conf
-          access-tokens = github.com=${{ secrets.GITHUB_TOKEN }}
-          trusted-users = root runner
-          EOF
-
-      - name: Restart Nix daemon
-        run: sudo systemctl restart nix-daemon
-
-      - uses: cachix/install-nix-action@v31.3.0
 
       - name: Pre-populate nix-shell
         run: |
