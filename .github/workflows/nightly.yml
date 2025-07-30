@@ -1,0 +1,54 @@
+name: Nightly CI
+on:
+  schedule:
+    - cron: "0 0 * * *"
+  workflow_dispatch:
+
+jobs:
+  branches:
+    runs-on: ubuntu-latest
+    outputs:
+      names: ${{ steps.get-branches.outputs.names }}
+    steps:
+      - name: Nightly Branches
+        id: get-branches
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          LATEST_RELEASES: 2
+        run: |
+          gh api repos/${{ github.repository }}/branches | jq -r '.[].name' | grep '^release/' | sort -Vr | head -n $LATEST_RELEASES > branches
+          echo develop >> branches
+          branches_json=$(cat branches | jq -R . | jq -cs .)
+          echo $branches_json
+          echo "names=$branches_json" >> $GITHUB_OUTPUT
+
+  nightly-dispatch:
+    runs-on: ubuntu-latest
+    needs: branches
+    strategy:
+      matrix:
+        branch: ${{ fromJson(needs.branches.outputs.names) }}
+      fail-fast: false
+    steps:
+      - name: Awaiting
+        id: dispatch
+        uses: the-actions-org/workflow-dispatch@v4
+        env:
+          RUN_NAME: "GitMod Update - ${{ matrix.branch }}"
+        with:
+          run-name: ${{ env.RUN_NAME }}
+          token: ${{ secrets.ORG_CI_GITHUB }}
+          ref: ${{ matrix.branch }}
+          workflow: mod-update.yml
+          wait-for-completion: true
+          wait-for-completion-timeout: 4h
+          display-workflow-run-url-timeout: 1h
+          inputs: >-
+            {
+              "run-name": "${{ env.RUN_NAME }}"
+            }
+      - name: Print Status
+        if: always()
+        run: |
+          echo "Workflow for branch ${{ matrix.branch }} completed with status: ${{ steps.dispatch.outputs.workflow-conclusion }}"
+          echo "For more details, see ${{ steps.dispatch.outputs.workflow-url }}"

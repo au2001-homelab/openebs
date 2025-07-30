@@ -1,6 +1,12 @@
-name: Submodule/Chart Update
+name: GitMod Update
+run-name: ${{ inputs.run-name }}
 on:
   workflow_dispatch:
+    inputs:
+      run-name:
+        description: 'The distinct run name used to retrieve the run ID. Defaults to the workflow name'
+        type: string
+        required: false
 
 jobs:
   submodule:
