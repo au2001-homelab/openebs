@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
-# Manage kubectl plugin binaries as GHCR OCI artifacts.
+# Manage kubectl plugin binaries as OCI artifacts.
 # Supports both pushing and pulling operations.
 # Usage:
-#   Push: ./kubectl-oci.sh push --tag <tag> --namespace <ghcr-path> --username <user> --password <token>
-#   Pull: ./kubectl-oci.sh pull --tag <tag> --namespace <ghcr-path> --username <user> --password <token>
+#   Push: ./kubectl-oci.sh push --tag <tag> --namespace <namespace> --username <user> --password <token>
+#   Pull: ./kubectl-oci.sh pull --tag <tag> --namespace <namespace> --username <user> --password <token>
 
 set -euo pipefail
 
@@ -17,24 +17,27 @@ TAG=""
 NAMESPACE=""
 USERNAME=""
 PASSWORD=""
+REGISTRY="ghcr.io"
+PLUGIN="${PLUGIN:-"openebs"}"
 
 usage() {
   cat << EOF
 Usage: $0 <action> [options]
 
 Actions:
-  push    Push kubectl binaries to GHCR as OCI artifacts
-  pull    Pull kubectl binaries from GHCR OCI artifacts
+  push    Push kubectl binaries to $REGISTRY as OCI artifacts
+  pull    Pull kubectl binaries from $REGISTRY OCI artifacts
 
 Options:
   --tag <tag>             Release tag (required)
-  --namespace <namespace> GHCR namespace path (required)
-  --username <username>   GHCR username (required)
-  --password <password>   GHCR token/password (required)
+  --registry <registry>   The registry to push/pull from [default=$REGISTRY]
+  --namespace <namespace> Namespace path (required)
+  --username <username>   Registry username (required)
+  --password <password>   Registry token/password (required)
 
 Examples:
-  $0 push --tag v1.0.0 --namespace ghcr.io/openebs/kubectl-plugins --username user --password token
-  $0 pull --tag v1.0.0 --namespace ghcr.io/openebs/kubectl-plugins --username user --password token
+  $0 push --tag v1.0.0 --namespace $PLUGIN/dev --username user --password token
+  $0 pull --tag v1.0.0 --namespace $PLUGIN/dev --username user --password token
 EOF
 }
 
@@ -66,6 +69,10 @@ parse_args() {
         NAMESPACE="$2"
         shift 2
         ;;
+      --registry)
+        REGISTRY="$2"
+        shift 2
+        ;;
       --username)
         USERNAME="$2"
         shift 2
@@ -89,21 +96,19 @@ parse_args() {
     usage
     log_fatal "Error: All options (--tag, --namespace, --username, --password) are required"
   fi
+
+  REPOSITORY=${REGISTRY}/${NAMESPACE}/kubectl-${PLUGIN}
 }
 
 # Login to registry
 login_registry() {
-  local registry_host
-  NAMESPACE="${NAMESPACE%/}"
-  registry_host=$(echo "$NAMESPACE" | cut -d'/' -f1)
-
-  echo "Logging in to ${registry_host}..."
-  echo "${PASSWORD}" | oras login "${registry_host}" --username "${USERNAME}" --password-stdin
+  echo "Logging in to ${REGISTRY}..."
+  echo "${PASSWORD}" | oras login "${REGISTRY}" --username "${USERNAME}" --password-stdin
 }
 
-# Push kubectl binaries to GHCR
+# Push kubectl binaries to registry
 push_artifacts() {
-  echo "Pushing kubectl binaries to ${NAMESPACE} with tag ${TAG}"
+  echo "Pushing kubectl binaries to ${REPOSITORY} with tag ${TAG}"
 
   # Check if artifacts directory exists
   if [[ ! -d "artifacts" ]]; then
@@ -112,30 +117,30 @@ push_artifacts() {
 
   # Create a combined tarball of all kubectl binaries
   echo "Creating combined tarball of all kubectl binaries..."
-  local combined_tar="kubectl-openebs-all-platforms-${TAG}.tar.gz"
+  local combined_tar="kubectl-$PLUGIN-all-platforms-${TAG}.tar.gz"
 
   tar -czf "${combined_tar}" -C artifacts .
 
-  echo "Pushing combined tarball to ${NAMESPACE}:${TAG}"
+  echo "Pushing combined tarball to ${REPOSITORY}:${TAG}"
 
-  oras push "${NAMESPACE}:${TAG}" \
-    --artifact-type application/vnd.openebs.kubectl.bundle.v1+tar+gzip \
+  oras push "${REPOSITORY}:${TAG}" \
+    --artifact-type application/vnd.$PLUGIN.kubectl.bundle.v1+tar+gzip \
     "${combined_tar}"
 
   rm -f "${combined_tar}"
 
   echo "✓ All kubectl binaries pushed successfully as a single bundle!"
-  echo "Bundle available at: ${NAMESPACE}:${TAG}"
+  echo "Bundle available at: ${REPOSITORY}:${TAG}"
 }
 
-# Pull kubectl binaries from GHCR
+# Pull kubectl binaries from registry
 pull_artifacts() {
-  echo "Pulling kubectl binaries bundle from ${NAMESPACE} for release ${TAG}"
+  echo "Pulling kubectl binaries bundle from ${REPOSITORY} for release ${TAG}"
 
   echo "Pulling kubectl bundle..."
-  oras pull "${NAMESPACE}:${TAG}"
+  oras pull "${REPOSITORY}:${TAG}"
 
-  local bundle_tar="kubectl-openebs-all-platforms-${TAG}.tar.gz"
+  local bundle_tar="kubectl-$PLUGIN-all-platforms-${TAG}.tar.gz"
 
   if [[ ! -f "$bundle_tar" ]]; then
     log_fatal "Error: Could not find kubectl bundle tarball"

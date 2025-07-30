@@ -63,7 +63,7 @@ jobs:
         run: |
           nix-shell --pure --run "./scripts/staging/kubectl-oci.sh pull \
             --tag ${{ github.ref_name }} \
-            --namespace ghcr.io/${{ github.repository_owner }}/dev/kubectl-openebs \
+            --namespace ${{ github.repository_owner }}/dev \
             --username ${{ github.actor }} \
             --password ${{ secrets.GITHUB_TOKEN }}" ./scripts/staging/shell.nix
 
