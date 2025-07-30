@@ -32,7 +32,6 @@ jobs:
         uses: peter-evans/create-pull-request@v7
         with:
           commit-message: "chore(ci): update git submodules"
-          committer: GitHub <noreply@github.com>
           title: "[CI] Update git submodules"
           draft: false
           signoff: true
