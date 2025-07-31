@@ -1,6 +1,12 @@
-name: Submodule/Chart Update
+name: GitMod Update
+run-name: ${{ inputs.run-name }}
 on:
   workflow_dispatch:
+    inputs:
+      run-name:
+        description: 'The distinct run name used to retrieve the run ID. Defaults to the workflow name'
+        type: string
+        required: false
 
 jobs:
   submodule:
@@ -32,7 +38,6 @@ jobs:
         uses: peter-evans/create-pull-request@v7
         with:
           commit-message: "chore(ci): update git submodules"
-          committer: GitHub <noreply@github.com>
           title: "[CI] Update git submodules"
           draft: false
           signoff: true
