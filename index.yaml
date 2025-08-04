@@ -4,7 +4,9 @@ entries:
   - annotations:
       helm.sh/images: |
         - name: etcd
-          image: docker.io/bitnami/etcd:3.6.2-debian-12-r0
+          image: docker.io/bitnamilegacy/etcd:3.6.4-debian-12-r0
+        - name: kubectl
+          image: docker.io/bitnamilegacy/kubectl:1.25.15
         - name: alloy
           image: docker.io/grafana/alloy:v1.8.1
         - name: loki
@@ -87,7 +89,7 @@ entries:
           image: registry.k8s.io/sig-storage/snapshot-controller:v8.2.1
     apiVersion: v2
     appVersion: 4.4.0-develop
-    created: "2025-08-04T08:54:03.01929569Z"
+    created: "2025-08-04T10:59:36.599642601Z"
     dependencies:
     - name: openebs-crds
       repository: ""
@@ -120,7 +122,7 @@ entries:
       repository: https://openebs.github.io/mayastor-extensions
       version: 0.0.0
     description: Containerized Attached Storage for Kubernetes
-    digest: 78f18e4f96ca672115591479ad8d84d616b208e8cf43fdfed78e66db4e51bb74
+    digest: dfe4cc1cf6ec0d5d0a391d247b9051d884162659a6375a1ef8e21e82c51060da
     home: https://www.openebs.io/
     icon: https://raw.githubusercontent.com/cncf/artwork/HEAD/projects/openebs/icon/color/openebs-icon-color.png
     keywords:
@@ -1690,4 +1692,4 @@ entries:
     urls:
     - https://github.com/openebs/openebs/releases/download/openebs-4.0.0/openebs-4.0.0.tgz
     version: 4.0.0
-generated: "2025-08-04T09:13:50.514915821Z"
+generated: "2025-08-04T10:59:36.556457946Z"
