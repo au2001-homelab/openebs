@@ -13,11 +13,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - id: nixpath
+        run: echo "nix_path=nixpkgs=$(jq -r '.nixpkgs.url' nix/sources.json)" >> $GITHUB_OUTPUT
       - uses: cachix/install-nix-action@v31.3.0
-      - name: Pre-populate nix-shell
-        run: |
-          export NIX_PATH=nixpkgs=$(jq '.nixpkgs.url' nix/sources.json -r)
-          echo "NIX_PATH=$NIX_PATH" >> $GITHUB_ENV
+        with:
+          nix_path: "${{ steps.nixpath.outputs.nix_path }}"
       - name: Run spell check
         run: nix-shell -p codespell --run "git ls-files '*.md' | xargs codespell --ignore-words '.codespell-ignores.txt'"
   plugin-changed:
@@ -48,7 +48,11 @@ jobs:
       - uses: actions/checkout@v4
         with:
           submodules: 'recursive'
+      - id: nixpath
+        run: echo "nix_path=nixpkgs=$(jq -r '.nixpkgs.url' nix/sources.json)" >> $GITHUB_OUTPUT
       - uses: cachix/install-nix-action@v31.3.0
+        with:
+          nix_path: "${{ steps.nixpath.outputs.nix_path }}"
         if: needs.plugin-changed.outputs.rust_changed == 'true'
       - name: Test building the static binaries
         if: needs.plugin-changed.outputs.rust_changed == 'true'
@@ -62,7 +66,11 @@ jobs:
       - uses: actions/checkout@v4
         with:
           submodules: 'recursive'
+      - id: nixpath
+        run: echo "nix_path=nixpkgs=$(jq -r '.nixpkgs.url' nix/sources.json)" >> $GITHUB_OUTPUT
       - uses: cachix/install-nix-action@v31.3.0
+        with:
+          nix_path: "${{ steps.nixpath.outputs.nix_path }}"
         if: needs.plugin-changed.outputs.rust_changed == 'true'
       - name: Test building the static binaries
         if: needs.plugin-changed.outputs.rust_changed == 'true'
