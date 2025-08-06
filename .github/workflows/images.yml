@@ -68,3 +68,8 @@ jobs:
             TAG=$(nix-shell --run "yq '.appVersion' charts/Chart.yaml")
             nix-shell --run "./scripts/release.sh --tag v${TAG}"
           fi
+      # debugging
+      # - name: Setup tmate session
+      #   if: ${{ failure() }}
+      #   timeout-minutes: 120
+      #   uses: mxschmitt/action-tmate@v3
