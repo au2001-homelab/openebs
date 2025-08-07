@@ -17,6 +17,7 @@ let
   k8sShellAttrs = import ./scripts/k8s/shell.nix { inherit pkgs; };
   helmShellAttrs = import ./charts/shell.nix { inherit pkgs; };
   stagingShellAttrs = import ./scripts/staging/shell.nix { inherit pkgs; };
+  usePreCommit = builtins.getEnv "IN_NIX_SHELL" == "impure" && builtins.getEnv "CI" != "1";
 in
 mkShell {
   name = "openebs-shell";
@@ -30,10 +31,10 @@ mkShell {
     paperclip
     openssl
     pkg-config
-    pre-commit
     which
     codespell
   ] ++ pkgs.lib.optional (!norust) rust
+  ++ pkgs.lib.optional (usePreCommit) pre-commit
   ++ k8sShellAttrs.buildInputs ++ helmShellAttrs.buildInputs ++ stagingShellAttrs.buildInputs
   ++ pkgs.lib.optional (system == "aarch64-darwin") darwin.apple_sdk.frameworks.Security;
 
@@ -49,7 +50,7 @@ mkShell {
 
   shellHook = ''
     ./scripts/nix/git-submodule-init.sh
-    if [ -z "$CI" ] && [ "$IN_NIX_SHELL" == "impure" ]; then
+    if [ "${toString usePreCommit}" = "1" ]; then
       echo
       pre-commit install
       pre-commit install --hook commit-msg

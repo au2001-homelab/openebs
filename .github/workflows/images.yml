@@ -42,7 +42,7 @@ jobs:
         run: |
           export NIX_PATH=nixpkgs=$(jq '.nixpkgs.url' nix/sources.json -r)
           echo "NIX_PATH=$NIX_PATH" >> $GITHUB_ENV
-          nix-shell --run "echo" shell.nix
+          nix-shell --run "echo" ./scripts/staging/shell.nix
 
       - name: Login to Docker Hub
         if: ${{ github.event_name == 'push' }}
@@ -62,9 +62,13 @@ jobs:
       - name: Build and push the release images
         run: |
           if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
-            nix-shell --pure --run "./scripts/helm/update-version-upon-release.sh"
-            nix-shell --run "./scripts/release.sh --tag ${{ inputs.tag }} --registry ${{ inputs.registry }}/${{ inputs.namespace }}"
+            nix-shell --pure --run "./scripts/helm/update-version-upon-release.sh" ./scripts/staging/shell.nix
+            nix-shell --run "./scripts/release.sh --tag ${{ inputs.tag }} --registry ${{ inputs.registry }}/${{ inputs.namespace }}" ./scripts/staging/shell.nix
           elif [[ "${{ github.event_name }}" == "push" ]]; then
-            TAG=$(nix-shell --run "yq '.appVersion' charts/Chart.yaml")
-            nix-shell --run "./scripts/release.sh --tag v${TAG}"
+            nix-shell --run './scripts/release.sh --tag $(yq '.appVersion' charts/Chart.yaml)' ./scripts/staging/shell.nix
           fi
+      # debugging
+      # - name: Setup tmate session
+      #   if: ${{ failure() }}
+      #   timeout-minutes: 120
+      #   uses: mxschmitt/action-tmate@v3
