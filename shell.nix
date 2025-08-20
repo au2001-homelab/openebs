@@ -18,6 +18,10 @@ let
   helmShellAttrs = import ./charts/shell.nix { inherit pkgs; };
   stagingShellAttrs = import ./scripts/staging/shell.nix { inherit pkgs; };
   usePreCommit = builtins.getEnv "IN_NIX_SHELL" == "impure" && builtins.getEnv "CI" != "1";
+  pre-commit = pkgs.runCommand "pre-commit" { } ''
+    mkdir -p $out/bin
+    cp ${pkgs.pre-commit}/bin/pre-commit $out/bin/pre-commit
+  '';
 in
 mkShell {
   name = "openebs-shell";
