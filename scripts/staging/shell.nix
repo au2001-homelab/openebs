@@ -2,7 +2,7 @@
     overlays = [ (_: _: { inherit (import ../../nix/sources.nix); }) (import ../../nix/overlay.nix { }) ];
   }
 }:
-pkgs.mkShell {
+pkgs.mkShellNoCC {
   name = "staging-shell";
   buildInputs = with pkgs; [
     oras
