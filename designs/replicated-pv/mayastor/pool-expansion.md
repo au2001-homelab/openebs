@@ -7,8 +7,8 @@ owners:
   - "@abhilashshetty04"
 editor: TBD
 creation-date: 2025-08-13
-last-updated: 2025-08-13
-status: provisional
+last-updated: 2025-09-03
+status: implementable
 ---
 
 # OpenEBS Enhancement Proposal for Mayastor DiskPool Expansion
