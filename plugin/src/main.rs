@@ -1,9 +1,9 @@
-extern crate core;
-
 use kubectl_plugin::resources;
 
 use clap::Parser;
-use std::{env, path::PathBuf};
+use std::env;
+
+use crate::cli_utils::K8sCtxArgs;
 
 pub(crate) mod cli_utils;
 pub mod console_logger;
@@ -16,55 +16,40 @@ struct CliArgs {
     #[clap(subcommand)]
     operations: cli_utils::Operations,
 
-    /// Namespace where openebs is installed.
-    /// If unset, defaults to the default namespace in the current context.
-    #[clap(global = true, long, short = 'n')]
-    namespace: Option<String>,
-
-    /// Path to kubeconfig file.
-    #[clap(global = true, long, short = 'k')]
-    kubeconfig: Option<PathBuf>,
+    #[clap(flatten)]
+    ctx: K8sCtxArgs,
 }
 
 impl CliArgs {
     async fn args() -> Result<Self, anyhow::Error> {
         let mut args = CliArgs::parse();
-        let ns = match args.namespace {
-            Some(ref namespace) => namespace.to_string(),
-            None => {
-                let client = kube_proxy::client_from_kubeconfig(args.kubeconfig.clone())
-                    .await
-                    .map_err(|err| anyhow::anyhow!("{err}"))?;
-                client.default_namespace().to_string()
-            }
-        };
-        let path = args.kubeconfig.clone();
+        let ns = args.ctx.namespace().await?;
+        let path = args.ctx.kubeconfig.clone();
         match args.operations {
             cli_utils::Operations::Mayastor(ref mut operations) => {
                 operations.cli_args.namespace = ns;
                 operations.cli_args.kubeconfig = path.clone();
                 if let resources::Operations::Dump(ref mut dump_args) = operations.ops {
-                    dump_args.args.set_kube_config_path(path)
+                    dump_args
+                        .args
+                        .set_kube_config(path, args.ctx.context.clone())
                 }
             }
             cli_utils::Operations::LocalpvLvm(ref mut operations) => {
-                operations.cli_args.namespace = ns;
-                operations.cli_args.kubeconfig = path
+                operations.cli_args.ctx = args.ctx.clone();
             }
             cli_utils::Operations::LocalpvZfs(ref mut operations) => {
-                operations.cli_args.namespace = ns;
-                operations.cli_args.kubeconfig = path
+                operations.cli_args.ctx = args.ctx.clone();
             }
             cli_utils::Operations::LocalpvHostpath(ref mut operations) => {
-                operations.cli_args.namespace = ns;
-                operations.cli_args.kubeconfig = path
+                operations.cli_args.ctx = args.ctx.clone();
             }
             cli_utils::Operations::Upgrade(ref mut upgrade_args) => {
                 upgrade_args.cli_args.namespace = ns;
-                upgrade_args.cli_args.kubeconfig = path;
+                upgrade_args.cli_args.ctx = args.ctx.clone();
             }
             cli_utils::Operations::Dump(ref mut dump_args) => {
-                dump_args.args.set_kube_config_path(path);
+                dump_args.args.kubeconfig = args.ctx.clone().into();
                 dump_args.args.set_namespace(ns);
             }
         }

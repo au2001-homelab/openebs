@@ -11,7 +11,6 @@ use upgrade::common::kube::client::client;
 use anyhow::Result;
 use clap::{Parser, Subcommand};
 use plugin::ExecuteOperation;
-use std::path::PathBuf;
 
 /// Arguments common to all upgrade commands.
 #[derive(Debug, Parser)]
@@ -19,8 +18,8 @@ pub struct UpgradeCommonArgs {
     #[arg(skip)]
     pub namespace: String,
 
-    #[arg(skip)]
-    pub kubeconfig: Option<PathBuf>,
+    #[clap(skip)]
+    pub ctx: crate::cli_utils::K8sCtxArgs,
 
     /// Helm release name for the openebs helm chart.
     #[arg(long, short)]

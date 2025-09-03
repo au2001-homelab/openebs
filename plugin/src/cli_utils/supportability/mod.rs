@@ -1,4 +1,3 @@
-use std::path::PathBuf;
 use supportability::operations::SystemDumpArgs;
 
 pub mod cli;
@@ -33,9 +32,9 @@ pub struct SupportArgs {
     #[arg(skip)]
     pub namespace: String,
 
-    /// Path to kubeconfig file.
+    /// Configuration for K8s connection.
     #[clap(skip)]
-    kubeconfig: Option<PathBuf>,
+    pub kubeconfig: supportability::KubeConfigArgs,
 
     /// The tenant id to be used to query loki logs.
     #[clap(global = true, long, default_value = "openebs")]
@@ -77,11 +76,6 @@ impl SupportArgs {
         &self.namespace
     }
 
-    /// Returns the optional path to the kubeconfig file.
-    pub fn kubeconfig(&self) -> Option<&std::path::PathBuf> {
-        self.kubeconfig.as_ref()
-    }
-
     /// Returns the tenant ID used to query Loki logs.
     pub fn tenant_id(&self) -> &str {
         &self.tenant_id
@@ -90,15 +84,6 @@ impl SupportArgs {
     /// Returns the logging label selectors used to filter logs.
     pub fn logging_label_selectors(&self) -> &str {
         &self.logging_label_selectors
-    }
-
-    /// Sets the path to the kubeconfig file used to interact with the Kube-Apiserver.
-    ///
-    /// # Arguments
-    ///
-    /// * `path` - An optional `PathBuf` representing the kubeconfig path.
-    pub fn set_kube_config_path(&mut self, path: Option<std::path::PathBuf>) {
-        self.kubeconfig = path;
     }
 
     /// Sets the namespace.

@@ -501,7 +501,8 @@ pub async fn upgrade_preflight_check(args: &UpgradeCommonArgs, release_name: &st
         console_logger::info("It is recommended that you do not create new volumes which make use of only one volume replica.", None);
 
         let config = kube_proxy::ConfigBuilder::default_api_rest()
-            .with_kube_config(args.kubeconfig.clone())
+            .with_kube_config(args.ctx.kubeconfig.clone())
+            .with_context(args.ctx.context.clone())
             .with_target_mod(|t| t.with_namespace(args.namespace.as_str()))
             .build()
             .await
@@ -522,7 +523,7 @@ pub async fn upgrade_preflight_check(args: &UpgradeCommonArgs, release_name: &st
         }
 
         if !args.skip_single_replica_volume_validation {
-            let k8s_client = kube_proxy::client_from_kubeconfig(args.kubeconfig.clone()).await?;
+            let k8s_client = args.ctx.client().await?;
             single_volume_replica_validation(&rest_client, k8s_client).await?;
         }
     }
@@ -532,7 +533,7 @@ pub async fn upgrade_preflight_check(args: &UpgradeCommonArgs, release_name: &st
 
 /// Start upgrade by creating an upgrade-job and such.
 pub async fn apply_upgrade(args: &UpgradeCommonArgs, release_name: &str) -> Result<()> {
-    let k8s_client = kube_proxy::client_from_kubeconfig(args.kubeconfig.clone()).await?;
+    let k8s_client = args.ctx.client().await?;
 
     let upgrade_events_field_selector = format!(
         "regarding.kind=Job,regarding.name={name}",

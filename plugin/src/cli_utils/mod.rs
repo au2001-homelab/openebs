@@ -13,6 +13,56 @@ pub(crate) mod mayastor;
 pub mod supportability;
 pub mod upgrade;
 
+/// Arguments specifying where openebs is installed.
+#[derive(Default, Debug, clap::Parser, Clone)]
+pub struct K8sCtxArgs {
+    /// Namespace where openebs is installed.
+    /// If unset, defaults to the default namespace in the current context.
+    #[clap(global = true, long, short = 'n')]
+    pub namespace: Option<String>,
+
+    /// Path to kubeconfig file.
+    #[clap(global = true, long, short = 'k')]
+    pub kubeconfig: Option<std::path::PathBuf>,
+
+    /// Kubernetes context to use.
+    /// If unset, defaults to the current context.
+    #[clap(global = true, long)]
+    pub context: Option<String>,
+}
+impl K8sCtxArgs {
+    /// Get the [`kube::Client`] based on the specified args.
+    pub async fn client(&self) -> anyhow::Result<kube::Client> {
+        let opts = kube_proxy::kubeconfig_options_from_context(self.context.clone());
+        let mut config = kube_proxy::config_from_kubeconfig(self.kubeconfig.clone(), opts).await?;
+        if let Some(namespace) = &self.namespace {
+            config.default_namespace = namespace.clone();
+        }
+        kube::Client::try_from(config).map_err(Into::into)
+    }
+    /// Get the specified namespace or the default namespace.
+    pub async fn namespace(&self) -> anyhow::Result<String> {
+        match &self.namespace {
+            Some(namespace) => Ok(namespace.to_string()),
+            None => {
+                let client = self.client().await?;
+                Ok(client.default_namespace().to_string())
+            }
+        }
+    }
+}
+impl From<K8sCtxArgs> for ::supportability::KubeConfigArgs {
+    fn from(value: K8sCtxArgs) -> Self {
+        Self {
+            path: value.kubeconfig,
+            opts: kube::config::KubeConfigOptions {
+                context: value.context,
+                ..Default::default()
+            },
+        }
+    }
+}
+
 /// Storage engines supported.
 #[allow(clippy::large_enum_variant)]
 #[derive(Parser, Debug)]
