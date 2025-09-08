@@ -36,7 +36,7 @@ async fn execute_resource_dump(cli_args: SupportArgs, resource: Resource) -> Res
         cli_args.loki_endpoint().cloned(),
         cli_args.etcd_endpoint().cloned(),
         *cli_args.since(),
-        cli_args.kubeconfig().cloned(),
+        cli_args.kubeconfig.clone(),
         *cli_args.timeout(),
         OutputFormat::Tar,
         cli_args.tenant_id().to_string(),

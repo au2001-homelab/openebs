@@ -21,7 +21,7 @@ pub(crate) async fn volumes(
     volumes_arg: &GetVolumesArg,
     client: Client,
 ) -> Result<(), Error> {
-    let volume_handle: Api<ZfsVolume> = Api::namespaced(client.clone(), &cli_args.namespace);
+    let volume_handle: Api<ZfsVolume> = Api::default_namespaced(client.clone());
     let vols = zfs_volumes(volume_handle, Some(volumes_arg.clone()))
         .await
         .map_err(|err| Error::Kube { source: err })?;
@@ -40,7 +40,7 @@ pub(crate) async fn volume(
     volume_arg: &GetVolumeArg,
     client: Client,
 ) -> Result<(), Error> {
-    let volume_handle: Api<ZfsVolume> = Api::namespaced(client.clone(), &cli_args.namespace);
+    let volume_handle: Api<ZfsVolume> = Api::default_namespaced(client.clone());
     let volume = zfs_volume(volume_handle, volume_arg)
         .await
         .map_err(|err| Error::Kube { source: err })?;

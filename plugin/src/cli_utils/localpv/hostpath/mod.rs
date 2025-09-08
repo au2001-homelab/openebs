@@ -1,10 +1,9 @@
-use plugin::resources::utils::OutputFormat;
-use plugin::ExecuteOperation;
 pub(crate) mod volume;
 
 use clap::Parser;
+use plugin::resources::utils::OutputFormat;
+use plugin::ExecuteOperation;
 use snafu::Snafu;
-use std::path::PathBuf;
 
 /// LocalPV Hostpath operations.
 #[derive(Parser, Debug)]
@@ -25,17 +24,12 @@ pub struct Hostpath {
 #[derive(Parser, Debug)]
 #[group(skip)]
 pub struct CliArgs {
-    /// Kubernetes namespace of localpv-hostpath service.
     #[clap(skip)]
-    pub namespace: String,
+    pub ctx: crate::cli_utils::K8sCtxArgs,
 
     /// The Output, viz yaml, json.
     #[clap(global = true, default_value = OutputFormat::None.as_ref(), short, long)]
     pub output: OutputFormat,
-
-    /// Path to kubeconfig file.
-    #[clap(skip)]
-    pub kubeconfig: Option<PathBuf>,
 }
 
 #[async_trait::async_trait(?Send)]
@@ -82,11 +76,11 @@ impl ExecuteOperation for HosthpathGet {
     type Error = Error;
 
     async fn execute(&self, cli_args: &CliArgs) -> Result<(), Error> {
-        let client = kube_proxy::client_from_kubeconfig(cli_args.kubeconfig.clone())
+        let client = cli_args
+            .ctx
+            .client()
             .await
-            .map_err(|err| Error::Generic {
-                source: anyhow::anyhow!("{err}"),
-            })?;
+            .map_err(|source| Error::Generic { source })?;
         match self {
             HosthpathGet::Volume(volume_arg) => {
                 volume::volume(cli_args, volume_arg, client).await?;

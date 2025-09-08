@@ -3,7 +3,6 @@ use plugin::ExecuteOperation;
 
 use clap::Parser;
 use snafu::Snafu;
-use std::path::PathBuf;
 
 pub(crate) mod node;
 pub(crate) mod supportability;
@@ -30,17 +29,12 @@ pub struct Lvm {
 #[derive(Parser, Debug)]
 #[group(skip)]
 pub struct CliArgs {
-    /// Kubernetes namespace of localpv-lvm service.
-    #[clap(skip)]
-    pub namespace: String,
-
     /// The Output, viz yaml, json.
     #[clap(global = true, default_value = OutputFormat::None.as_ref(), short, long)]
     pub output: OutputFormat,
 
-    /// Path to kubeconfig file.
     #[clap(skip)]
-    pub kubeconfig: Option<PathBuf>,
+    pub ctx: crate::cli_utils::K8sCtxArgs,
 }
 
 #[async_trait::async_trait(?Send)]
@@ -96,11 +90,11 @@ impl ExecuteOperation for LvmGet {
     type Error = Error;
 
     async fn execute(&self, cli_args: &CliArgs) -> Result<(), Error> {
-        let client = kube_proxy::client_from_kubeconfig(cli_args.kubeconfig.clone())
+        let client = cli_args
+            .ctx
+            .client()
             .await
-            .map_err(|err| Error::Generic {
-                source: anyhow::anyhow!("{err}"),
-            })?;
+            .map_err(|source| Error::Generic { source })?;
         match self {
             LvmGet::Volume(volume_arg) => {
                 volume::volume(cli_args, volume_arg, client).await?;

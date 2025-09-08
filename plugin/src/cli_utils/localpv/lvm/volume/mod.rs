@@ -21,7 +21,7 @@ pub(crate) async fn volumes(
     volumes_arg: &GetVolumesArg,
     client: Client,
 ) -> Result<(), Error> {
-    let volume_handle: Api<LvmVolume> = Api::namespaced(client.clone(), &cli_args.namespace);
+    let volume_handle: Api<LvmVolume> = Api::default_namespaced(client.clone());
     let vol_list = lvm_volumes(volume_handle, Some(volumes_arg.clone()))
         .await
         .map_err(|err| Error::Kube { source: err })?;
@@ -40,7 +40,7 @@ pub(crate) async fn volume(
     volume_arg: &GetVolumeArg,
     client: Client,
 ) -> Result<(), Error> {
-    let volume_handle: Api<LvmVolume> = Api::namespaced(client.clone(), &cli_args.namespace);
+    let volume_handle: Api<LvmVolume> = Api::default_namespaced(client.clone());
     let volume = lvm_volume(volume_handle, volume_arg)
         .await
         .map_err(|err| Error::Kube { source: err })?;
