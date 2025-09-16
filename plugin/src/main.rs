@@ -23,17 +23,12 @@ struct CliArgs {
 impl CliArgs {
     async fn args() -> Result<Self, anyhow::Error> {
         let mut args = CliArgs::parse();
-        let ns = args.ctx.namespace().await?;
-        let path = args.ctx.kubeconfig.clone();
+        let ns = || args.ctx.namespace();
         match args.operations {
             cli_utils::Operations::Mayastor(ref mut operations) => {
-                operations.cli_args.namespace = ns;
-                operations.cli_args.kubeconfig = path.clone();
-                if let resources::Operations::Dump(ref mut dump_args) = operations.ops {
-                    dump_args
-                        .args
-                        .set_kube_config(path, args.ctx.context.clone())
-                }
+                operations.cli_args.namespace = ns().await?;
+                operations.cli_args.kubeconfig = args.ctx.kubeconfig.clone();
+                operations.cli_args.context = args.ctx.context.clone();
             }
             cli_utils::Operations::LocalpvLvm(ref mut operations) => {
                 operations.cli_args.ctx = args.ctx.clone();
@@ -45,12 +40,12 @@ impl CliArgs {
                 operations.cli_args.ctx = args.ctx.clone();
             }
             cli_utils::Operations::Upgrade(ref mut upgrade_args) => {
-                upgrade_args.cli_args.namespace = ns;
+                upgrade_args.cli_args.namespace = ns().await?;
                 upgrade_args.cli_args.ctx = args.ctx.clone();
             }
             cli_utils::Operations::Dump(ref mut dump_args) => {
                 dump_args.args.kubeconfig = args.ctx.clone().into();
-                dump_args.args.set_namespace(ns);
+                dump_args.args.set_namespace(ns().await?);
             }
         }
         Ok(args)
